@@ -9,6 +9,7 @@ from parseeyefile import *
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 import eyeoutputqt
+import statusqueue as sq
 #import to do for synchonisation
 import sys
 import os
@@ -19,6 +20,8 @@ LOGO = "iSpectorLogo.svg"
 class NoSuchString(Exception):
     def __init__(self,message):
         super(NoSuchString, self).__init__(message)
+
+
 
 def comboSelectString(combo, string):
     '''
@@ -33,6 +36,15 @@ def comboSelectString(combo, string):
     else:
         combo.setCurrentIndex(index)
 
+
+class PeriodicTimer(QtCore.QTimer):
+    
+    def __init__(self, MainWin, parent=None):
+        super(PeriodicTimer, self).__init__(parent)
+        self.win = MainWin
+    
+    def timerEvent(self, event):
+        self.win.onTimer()
 
 class Controller :
     '''
@@ -53,6 +65,7 @@ class Controller :
     def _initModel(self):
         ''' Fixes model initially '''
         self.model.__dict__["status"]= "ready"
+        self.model.__dict__["status_queue"] = sq.StatusQueue()
         
         # Only select real files and create a absolute path
         self.model.files = [ p.abspath(i) for i in self.model.files if p.isfile(i) ]
@@ -68,6 +81,7 @@ class Controller :
 
         if self.model.stim_dir:
             self.updateStimDir(self.model.stim_dir)
+
             
     def updateExtract(self, string):
         if string == "inspect":
@@ -188,6 +202,9 @@ class Controller :
         newset      = oldset - removeset
         self.model.selected = []
         self.model.files = list(sorted(newset))
+
+    def onTimer(self):
+        print "Yeah in timer."
 
 
 class DirGroup (QtGui.QGroupBox):
@@ -580,6 +597,9 @@ class AscExtractorGui(QtGui.QMainWindow):
         
         self.controller = Controller(model, self)
         self.MODEL      = model
+
+        self.timer      = PeriodicTimer(self)
+        self.timer.start(100)
         
         # init Qt related stuff
         self._init()
@@ -642,6 +662,11 @@ class AscExtractorGui(QtGui.QMainWindow):
         ''' returns a tuple of data model and the controller '''
         return self.MODEL, self.controller
 
+    def reportError(self, string):
+        self.MODEL.status_queue.push_message(sq.StatusMessage(string, sq.StatusMessage.error))
+
+    def reportStatus(self, string):
+        self.MODEL.status_queue.push_message(sq.StatusMessage(string, sq.StatusMessage.ok))
 
     def updateFromModel(self):
         ''' Read the model and update the view '''
@@ -783,6 +808,9 @@ class AscExtractorGui(QtGui.QMainWindow):
             self.extractForFixation(files, self.MODEL.output_dir)
         else:
             self.examine(files)
+
+    def onTimer(self):
+        self.controller.onTimer()
         
 
 def main():
