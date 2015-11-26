@@ -390,7 +390,8 @@ class ExamineDataModel(object):
         self.fileindex  = 0
         self.trialindex = 0
         self.eyedata    = None
-        self.loadEyeFile()
+        if not self.loadEyeFile():
+            return
         self._loadEyeData()
 
     def loadEyeFile(self):
@@ -401,8 +402,8 @@ class ExamineDataModel(object):
         if not entries:
             errors = pr.getErrors()
             for i in errors:
-                self.mainwin.reportError(i[0] + ':' + str(i[2]))
-            return 
+                self.MAINWIN.reportError(i[0] + ':' + str(i[1]))
+            return False
 
         MODEL = self.MAINWIN.getModel()[0] # ignore the controller in the tuple
 
@@ -423,6 +424,8 @@ class ExamineDataModel(object):
         self.experiment = EyeExperiment(entries)
         self.trials     = self.experiment.trials
 
+        return True
+
     def _loadEyeData(self):
         ''' Load eyedata '''
         trial = self.trials[self.trialindex]
@@ -438,7 +441,8 @@ class ExamineDataController(object):
 
     def __init__(self, model):
         self.model = model
-        self.model.loadEyeFile();
+        if not self.model.loadEyeFile():
+            return
         self.setTrialIndex(0)
 
     def reload(self):
@@ -454,7 +458,8 @@ class ExamineDataController(object):
         elif self.model.fileindex >= len(self.model.files):
             self.model.fileindex = len(self.model.files) - 1
         # load new eyefile 
-        self.model.loadEyeFile()
+        if not self.model.loadEyeFile():
+            return
         # Make sure no invalid trial is selected
         self.setTrialIndex(self.model.trialindex)
 

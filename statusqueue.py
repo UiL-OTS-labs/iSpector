@@ -16,7 +16,7 @@ class StatusMessage(object):
     error   = 1 
     ## this message is ok, not an error
     ok      = 0
-    def __init__(self, message, status):
+    def __init__(self, status, message):
         '''
         @param message the message to display to the user
         @param status is either StatusMessage.error or StatusMessage.ok.

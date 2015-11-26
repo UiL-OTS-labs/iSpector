@@ -14,8 +14,11 @@ import statusqueue as sq
 import sys
 import os
 import os.path as p
+import ievent
 
 LOGO = "iSpectorLogo.svg"
+MYAPP = None
+
 
 class NoSuchString(Exception):
     def __init__(self,message):
@@ -82,7 +85,6 @@ class Controller :
         if self.model.stim_dir:
             self.updateStimDir(self.model.stim_dir)
 
-            
     def updateExtract(self, string):
         if string == "inspect":
             self.model.extract = False
@@ -204,7 +206,7 @@ class Controller :
         self.model.files = list(sorted(newset))
 
     def onTimer(self):
-        print "Yeah in timer."
+        pass # print "Yeah in timer."
 
 
 class DirGroup (QtGui.QGroupBox):
@@ -599,7 +601,7 @@ class AscExtractorGui(QtGui.QMainWindow):
         self.MODEL      = model
 
         self.timer      = PeriodicTimer(self)
-        self.timer.start(100)
+        self.timer.start(1000)
         
         # init Qt related stuff
         self._init()
@@ -657,6 +659,13 @@ class AscExtractorGui(QtGui.QMainWindow):
         self.updateFromModel()
 
         self.show()
+
+    def event(self, e):
+        if e.type == ievent.StatusEvent.my_user_event_type:
+            print str(e.status())
+            return True
+        return super(AscExtractorGui, self).event(e)
+
 
     def getModel(self):
         ''' returns a tuple of data model and the controller '''
@@ -810,14 +819,32 @@ class AscExtractorGui(QtGui.QMainWindow):
             self.examine(files)
 
     def onTimer(self):
-        self.controller.onTimer()
+        #self.controller.onTimer()
+        status = sq.StatusMessage(sq.StatusMessage.ok, "iSpector started")
+        event = ievent.StatusEvent(status)
+        QtGui.QApplication.sendEvent(self, event)
         
+
+class iSpectorApp(QtGui.QApplication):
+    ''' Our own app mainly create to catch user events '''
+
+    def notify(self, receiver, event):
+        if event.type() > QtCore.QEvent.User:
+            print "Got User event"
+            w = receiver
+            while w:
+                res = w.event(event)
+                if res and event.isAccepted():
+                    return res
+                w = w.parent()
+        return super(iSpectorApp, self).notify(receiver, event)
 
 def main():
     import arguments
     QtCore.pyqtRemoveInputHook()
     un_parsed_args = arguments.parseCmdLineKnown()
-    app = QtGui.QApplication(un_parsed_args)
+    app = iSpectorApp(un_parsed_args)
+    #MYAPP = ap
     #just keep looks inherited from the environment
     #app.setStyle(QtGui.QStyleFactory.create('Cleanlooks'))
 
