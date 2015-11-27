@@ -9,7 +9,7 @@ from parseeyefile import *
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 import eyeoutputqt
-import statusqueue as sq
+import statusmessage as sq
 #import to do for synchonisation
 import sys
 import os
@@ -59,7 +59,6 @@ class Controller :
     def _initModel(self):
         ''' Fixes model initially '''
         self.model.__dict__["status"]= "ready"
-        self.model.__dict__["status_queue"] = sq.StatusQueue()
         
         # Only select real files and create a absolute path
         self.model.files = [ p.abspath(i) for i in self.model.files if p.isfile(i) ]
@@ -625,11 +624,11 @@ class AscExtractorGui(QtGui.QMainWindow):
         self.actionbutton.clicked.connect(self.doAction)
         self.grid.addWidget(self.actionbutton, 3, 1, alignment=QtCore.Qt.AlignRight)
 
-        self.msgbox = statusbox.StatusBox()
+        self.statusbox = statusbox.StatusBox()
         templayout = QtGui.QVBoxLayout();
         templabel = QtGui.QLabel("Status messages: ")
         templayout.addWidget(templabel)
-        templayout.addWidget(self.msgbox)
+        templayout.addWidget(self.statusbox)
         self.grid.addLayout(templayout, 2, 0, 1, 2)
 
         # create exit handeling and keyboard short cuts.
@@ -657,11 +656,11 @@ class AscExtractorGui(QtGui.QMainWindow):
         self.show()
 
     def event(self, e):
-        if e.type == ievent.StatusEvent.my_user_event_type:
-            print str(e.status())
+        if e.type() == ievent.StatusEvent.my_user_event_type:
+            status = e.get_status()
+            self.statusbox.addMessage(status)
             return True
         return super(AscExtractorGui, self).event(e)
-
 
     def getModel(self):
         ''' returns a tuple of data model and the controller '''
@@ -735,6 +734,7 @@ class AscExtractorGui(QtGui.QMainWindow):
         for fname in filelist:
             #inform user
             msg = "processing file: \"" + fname + "\""
+            self.sendEvent(StatusEvent(StatusMessage.ok, msg))
             self.statusBar().showMessage(msg)
 
             pr = parseEyeFile(fname)
@@ -814,19 +814,11 @@ class AscExtractorGui(QtGui.QMainWindow):
         else:
             self.examine(files)
 
-    def onTimer(self):
-        #self.controller.onTimer()
-        status = sq.StatusMessage(sq.StatusMessage.ok, "iSpector started")
-        event = ievent.StatusEvent(status)
-        QtGui.QApplication.sendEvent(self, event)
-        
-
 class iSpectorApp(QtGui.QApplication):
     ''' Our own app mainly create to catch user events '''
 
     def notify(self, receiver, event):
         if event.type() > QtCore.QEvent.User:
-            print "Got User event"
             w = receiver
             while w:
                 res = w.event(event)
@@ -836,15 +828,24 @@ class iSpectorApp(QtGui.QApplication):
         return super(iSpectorApp, self).notify(receiver, event)
 
 def main():
+
     import arguments
     QtCore.pyqtRemoveInputHook()
     un_parsed_args = arguments.parseCmdLineKnown()
     app = iSpectorApp(un_parsed_args)
-    #MYAPP = ap
+        
     #just keep looks inherited from the environment
     #app.setStyle(QtGui.QStyleFactory.create('Cleanlooks'))
+    #app.setStyle(QtGui.QStyleFactory.create('windows'))
+    #app.setStyle(QtGui.QStyleFactory.create('Macintosh'))
 
     win = AscExtractorGui(arguments.ARGS)
+    
+    for i in range (25):
+        status = sq.StatusMessage(sq.StatusMessage.error, "iSpector started")
+        event = ievent.StatusEvent(status)
+        QtGui.QApplication.postEvent(win, event)
+    
     sys.exit(app.exec_())
 
 

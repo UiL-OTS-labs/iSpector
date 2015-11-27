@@ -24,11 +24,11 @@ class StatusMessage(object):
         self.message = message
         self.status  = status
 
-    def status(self):
+    def get_status(self):
         return self.status
 
-    def message(self):
+    def get_message(self):
         return self.message
 
     def __str__(self):
-        return message
+        return self.message

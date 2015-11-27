@@ -1,4 +1,3 @@
-
 '''
 @packge statusbox This package includes a box that can be included inside a
 gui. It provides a visual display to show, warnings and status messages
@@ -8,7 +7,6 @@ to the user.
 from PyQt4 import QtGui
 from PyQt4.QtGui import QIcon
 from statusmessage import *
-
 
 class StatusBoxMessage(QtGui.QListWidgetItem):
     '''
@@ -23,10 +21,10 @@ class StatusBoxMessage(QtGui.QListWidgetItem):
     ERROR= "images/error.svg"
 
     def __init__(self, msg, parent=None):
-        if msg.status() == StatusMessage.warning:
-            super(StatusBoxMessage, self).__init__(str(msg), QIcon(self.WARN), parent)
-        elif msg.status() == StatusMessage.error:
-            super(StatusBoxMessage, self).__init__(str(msg), QIcon(self.ERROR), parent)
+        if msg.get_status() == StatusMessage.warning:
+            super(StatusBoxMessage, self).__init__(QIcon(self.WARN), str(msg), parent)
+        elif msg.get_status() == StatusMessage.error:
+            super(StatusBoxMessage, self).__init__(QIcon(self.ERROR), str(msg), parent)
         else:
             super(StatusBoxMessage, self).__init__(str(msg), parent)
 
@@ -42,7 +40,15 @@ class StatusBox (QtGui.QListWidget):
 
     def __init__(self, parent=None):
         super(StatusBox, self).__init__(parent)
+        self.initFont();
 
-    def add_message(self, message):
-        self.insertItem(StatusBoxMessage(message))
+    def initFont(self):
+        font = QtGui.QFont("Monospace")
+        font.setStyleHint(QtGui.QFont.TypeWriter)
+        font.setPointSize(18.0/2)
+        self.setFont(font)
+
+
+    def addMessage(self, message):
+        self.insertItem(0,StatusBoxMessage(message))
         

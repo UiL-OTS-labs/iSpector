@@ -11,7 +11,7 @@ class StatusEvent(QtCore.QEvent):
         super(StatusEvent, self).__init__(StatusEvent.my_user_event_type)
         self.status = status
 
-    def status(self):
+    def get_status(self):
         return self.status
 
     def spontaneous(self):
