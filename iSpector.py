@@ -15,6 +15,7 @@ import sys
 import os
 import os.path as p
 import ievent
+import statusbox
 
 LOGO = "iSpectorLogo.svg"
 MYAPP = None
@@ -38,16 +39,6 @@ def comboSelectString(combo, string):
         raise NoSuchString("The string \"" + string + "\" is not available")
     else:
         combo.setCurrentIndex(index)
-
-
-class PeriodicTimer(QtCore.QTimer):
-    
-    def __init__(self, MainWin, parent=None):
-        super(PeriodicTimer, self).__init__(parent)
-        self.win = MainWin
-    
-    def timerEvent(self, event):
-        self.win.onTimer()
 
 class Controller :
     '''
@@ -204,9 +195,6 @@ class Controller :
         newset      = oldset - removeset
         self.model.selected = []
         self.model.files = list(sorted(newset))
-
-    def onTimer(self):
-        pass # print "Yeah in timer."
 
 
 class DirGroup (QtGui.QGroupBox):
@@ -587,10 +575,14 @@ class InputOutput(QtGui.QVBoxLayout) :
                 item.setSelected(False)
         
 class AscExtractorGui(QtGui.QMainWindow):
-    ''' This is the main window. It is essentially a wrapper around the
-        commandline arguments of examine_csv.
+    ''' 
+    \brief The main window of iSpector
+
+    This is the main window. It is essentially a wrapper around the
+    commandline arguments of examine_csv.
     '''
 
+    ## window title, can still be improved
     _WINDOW_TITLE = "iSpector for Fixation(als het met eye begint zal het wel goed zijn)"
 
     def __init__(self, model):
@@ -600,9 +592,6 @@ class AscExtractorGui(QtGui.QMainWindow):
         self.controller = Controller(model, self)
         self.MODEL      = model
 
-        self.timer      = PeriodicTimer(self)
-        self.timer.start(1000)
-        
         # init Qt related stuff
         self._init()
 
@@ -630,11 +619,18 @@ class AscExtractorGui(QtGui.QMainWindow):
         self.grid.addWidget(self.dirs, 1, 1)
 
         self.files = InputOutput(self.controller, self.MODEL)
-        self.grid.addLayout(self.files, 0, 0, QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
+        self.grid.addLayout(self.files, 0, 0, 2,1, QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
 
         self.actionbutton = QtGui.QPushButton("")
         self.actionbutton.clicked.connect(self.doAction)
-        self.grid.addWidget(self.actionbutton, 2, 1, alignment=QtCore.Qt.AlignRight)
+        self.grid.addWidget(self.actionbutton, 3, 1, alignment=QtCore.Qt.AlignRight)
+
+        self.msgbox = statusbox.StatusBox()
+        templayout = QtGui.QVBoxLayout();
+        templabel = QtGui.QLabel("Status messages: ")
+        templayout.addWidget(templabel)
+        templayout.addWidget(self.msgbox)
+        self.grid.addLayout(templayout, 2, 0, 1, 2)
 
         # create exit handeling and keyboard short cuts.
         icon        = QtGui.QIcon.fromTheme("window-close")
