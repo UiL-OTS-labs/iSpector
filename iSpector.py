@@ -9,7 +9,7 @@ from parseeyefile import *
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 import eyeoutputqt
-import statusmessage as sq
+import statusmessage as sm
 #import to do for synchonisation
 import sys
 import os
@@ -21,11 +21,20 @@ LOGO = "iSpectorLogo.svg"
 MYAPP = None
 
 
+__module_main_window = 1;
+
+def getMainWindow():
+    '''
+    This function returns a reference to the main window.
+    It is used for example to call reportStatus from another
+    python module. It should not be abused to get the mainwindow
+    for every single phart...
+    '''
+    return __module_main_window
+
 class NoSuchString(Exception):
     def __init__(self,message):
         super(NoSuchString, self).__init__(message)
-
-
 
 def comboSelectString(combo, string):
     '''
@@ -666,11 +675,10 @@ class AscExtractorGui(QtGui.QMainWindow):
         ''' returns a tuple of data model and the controller '''
         return self.MODEL, self.controller
 
-    def reportError(self, string):
-        self.MODEL.status_queue.push_message(sq.StatusMessage(string, sq.StatusMessage.error))
-
-    def reportStatus(self, string):
-        self.MODEL.status_queue.push_message(sq.StatusMessage(string, sq.StatusMessage.ok))
+    def reportStatus(self, status, message):
+        status =  sm.StatusMessage(status, message)
+        event = ievent.StatusEvent(status)
+        QtGui.QApplication.postEvent(self, event)
 
     def updateFromModel(self):
         ''' Read the model and update the view '''
@@ -697,8 +705,8 @@ class AscExtractorGui(QtGui.QMainWindow):
             filelist = self.MODEL.files
 
         examinewidget = eyeoutputqt.ExamineEyeDataWidget(filelist, self)
-        examinewidget.show()
-
+        if examinewidget.hasValidData():
+            examinewidget.show()
 
     def _createOutputFilename(self, experiment, fname, outdir):
         ''' Create a suitable output absolute pathname
@@ -734,7 +742,7 @@ class AscExtractorGui(QtGui.QMainWindow):
         for fname in filelist:
             #inform user
             msg = "processing file: \"" + fname + "\""
-            self.sendEvent(StatusEvent(StatusMessage.ok, msg))
+            self.reportStatus(sm.StatusMessage.ok, msg)
             self.statusBar().showMessage(msg)
 
             pr = parseEyeFile(fname)
@@ -794,18 +802,10 @@ class AscExtractorGui(QtGui.QMainWindow):
         if not files:
             # if no files are selected ask whether all files in the 
             # listview should be processed.
-            filelist = self.MODEL.files
-            dlg = QtGui.QMessageBox(QtGui.QMessageBox.Warning,
-                                    "No files selected",
-                                    ("There are no specific files selected to run an action upon\r\n"
-                                    "Would you like to run the action on all loaded files?\r\n"
-                                    "<b>Note<b/>: it is time consuming to inspect all files."),
-                                    QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel
-                                    )
-            dlg.setTextFormat(1) # rich text
-            response = dlg.exec_()
-            if response == QtGui.QMessageBox.Ok:
-                files = filelist
+            self.reportStatus(sm.StatusMessage.warning,
+                    "No files selected running action on all files")
+            
+            files = self.MODEL.files
         if not files:
             return
 
@@ -836,15 +836,15 @@ def main():
         
     #just keep looks inherited from the environment
     #app.setStyle(QtGui.QStyleFactory.create('Cleanlooks'))
+    app.setStyle(QtGui.QStyleFactory.create('Motiv'))
     #app.setStyle(QtGui.QStyleFactory.create('windows'))
     #app.setStyle(QtGui.QStyleFactory.create('Macintosh'))
 
     win = AscExtractorGui(arguments.ARGS)
-    
-    for i in range (25):
-        status = sq.StatusMessage(sq.StatusMessage.error, "iSpector started")
-        event = ievent.StatusEvent(status)
-        QtGui.QApplication.postEvent(win, event)
+    __module_main_window = win
+    print __module_main_window
+
+    win.reportStatus(sm.StatusMessage.ok, "iSpector started")
     
     sys.exit(app.exec_())
 

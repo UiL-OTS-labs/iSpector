@@ -10,6 +10,8 @@ from eyeexperiment import EyeExperiment
 from parseeyefile import parseEyeFile
 from eyedata import EyeData 
 from eyelog import LogEntry
+import statusmessage as sm
+import iSpector
 
 from PyQt4 import QtGui, QtCore
 
@@ -168,7 +170,16 @@ class GazePlotWidget(FigureCanvas):
             except IOError as e1:
                 pass
 
-        if img != None:
+        if img == None:
+            msg = "Unable to load: " + picture + "Did you set the stimulus directory?"
+            p = self
+            last = None
+            while p:
+                last = p
+                p = p.parent()
+            last.reportStatus(sm.StatusMessage.warning, msg)
+            
+        else:
             s = img.shape
             g = gcd_iter(s[0], s[1])
             #self.figure.set_size_inches(s[0]/g, s[1]/g)
@@ -402,7 +413,7 @@ class ExamineDataModel(object):
         if not entries:
             errors = pr.getErrors()
             for i in errors:
-                self.MAINWIN.reportError(i[0] + ':' + str(i[1]))
+                self.MAINWIN.reportStatus(i[2], i[0] + ':' + str(i[1]))
             return False
 
         MODEL = self.MAINWIN.getModel()[0] # ignore the controller in the tuple
@@ -505,9 +516,15 @@ class ExamineEyeDataWidget(QtGui.QWidget):
         super(ExamineEyeDataWidget, self).__init__(parent=parent, flags=QtCore.Qt.Window)
         self.MAINWINDOW = parent
         self.MODEL      = ExamineDataModel(files, parent)
+        if not self.MODEL.eyedata:
+            QtGui.QApplication.postEvent(self, QtGui.QCloseEvent())
+            return
         self.controller = ExamineDataController(self.MODEL)
         self._initGui()
         self.updateFromModel()
+
+    def hasValidData(self):
+        return self.MODEL.eyedata != None
 
     def _initGui(self):
         '''
