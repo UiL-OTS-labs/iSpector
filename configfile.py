@@ -8,14 +8,18 @@ PROGRAM     = "iSpector"
 EXTENSION   = ".json"
 DIR         = "dir"
 
+STIMDIR     = "stimdir"
+FILEDIR     = "filedir"
+OUTPUTDIR   = "outputdir"
+
 class ConfigDir(dict):
     '''
     This is the representation of the directories used by iSpector
     '''
     def __init__(self, stimdir="", filedir="", outputdir=""):
-        self["stimdir"]     = stimdir
-        self["filedir"]     = filedir
-        self["outputdir"]   = outputdir
+        self[STIMDIR]     = stimdir
+        self[FILEDIR]     = filedir
+        self[OUTPUTDIR]   = outputdir
 
 class ConfigFile (dict):
     '''
@@ -38,6 +42,7 @@ class ConfigFile (dict):
         '''
         f = open(self.conffile, 'w')
         f.write(json.dumps(self, indent=4))
+        f.close()
 
     def parse(self):
         '''
@@ -45,8 +50,8 @@ class ConfigFile (dict):
         '''
         f = open(self.conffile, 'r')
         content = f.read()
-        print content
-        self = json.loads(content)
+        self.update( json.loads(content) )
+        f.close()
 
     def create(self):
         '''
@@ -64,12 +69,6 @@ class ConfigFile (dict):
 
         f.write(json.dumps(self))
         f.close()
-
-    def get_dirs(self):
-        '''
-        \Obtains the directories from the config file
-        '''
-        json.dumps(self)
 
     def _getWindowsConfigDir(self):
         '''
