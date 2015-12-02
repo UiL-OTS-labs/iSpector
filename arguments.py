@@ -47,8 +47,8 @@ def _addArguments(p):
     p.add_argument('-r', '--extract-right', action="store_true",
         help='Extract only the right-gaze and fixations'
         )
-    p.add_argument('-d', '--output-dir', type=str, default=".", help="specify the output directory")
-    p.add_argument('--stim-dir', type=str, default=".", help="specify the directory where the stimuli can be found.")
+    p.add_argument('-d', '--output-dir', type=str, default="", help="specify the output directory")
+    p.add_argument('--stim-dir', type=str, default="", help="specify the directory where the stimuli can be found.")
     
     #these are positional arguments
     p.add_argument('files', nargs='*',
