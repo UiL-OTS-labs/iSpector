@@ -817,7 +817,9 @@ class AscExtractorGui(QtGui.QMainWindow):
             return
 
         if self.MODEL[self.MODEL.EXTRACT]:
-            self.extractForFixation(files, self.MODEL[self.MODEL.OUTPUTDIR])
+            dirs = self.MODEL[self.MODEL.DIRS]
+            d = dirs[configfile.OUTPUTDIR]
+            self.extractForFixation(files, d)
         else:
             self.examine(files)
 

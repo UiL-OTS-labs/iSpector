@@ -11,7 +11,8 @@ from parseeyefile import parseEyeFile
 from eyedata import EyeData 
 from eyelog import LogEntry
 import statusmessage as sm
-import iSpector
+import configfile 
+
 
 from PyQt4 import QtGui, QtCore
 
@@ -419,12 +420,12 @@ class ExamineDataModel(object):
         MODEL = self.MAINWIN.getModel()[0] # ignore the controller in the tuple
 
         # Optionally filter right or left gaze from the experiment
-        if  (MODEL.extract_right and MODEL.extract_left) or\
-            (not MODEL.extract_left and not MODEL.extract_right):
+        if  (MODEL[MODEL.EXTRACT_RIGHT] and MODEL[MODEL.EXTRACT_LEFT]) or\
+            (not MODEL[MODEL.EXTRACT_LEFT] and not MODEL[MODEL.EXTRACT_RIGHT]):
             pass # If both are specified or if none are specified extract both eyes
-        elif MODEL.extract_left:
+        elif MODEL[MODEL.EXTRACT_LEFT]:
             entries = LogEntry.removeRightGaze(entries)
-        elif MODEL.extract_right:
+        elif MODEL[MODEL.EXTRACT_RIGHT]:
             entries = LogEntry.removeLeftGaze(entries)
         else:
             raise RuntimeError("The control flow shouldn't get here.")
@@ -442,8 +443,11 @@ class ExamineDataModel(object):
         trial = self.trials[self.trialindex]
         # We only want to read the model thus no need to get the controller
         MM = self.MAINWIN.getModel()[0]
+        thres = MM[MM.THRESHOLD]
+        nthres= MM[MM.NTHRESHOLD]
+        smooth= MM[MM.SMOOTH]
 
-        self.eyedata = EyeData(MM.threshold, MM.nthres, MM.smooth)
+        self.eyedata = EyeData(thres, nthres, smooth)
         self.eyedata.processTrial(self.trials[self.trialindex])
 
 class ExamineDataController(object):
@@ -598,10 +602,11 @@ class ExamineEyeDataWidget(QtGui.QWidget):
         return w
 
     def updateSliders(self):
-        if len(self.MODEL.files) > 1:
+        nfiles = len(self.MODEL.files) 
+        if nfiles > 1:
             self.fileslider.show()
-            if self.fileslider.maximum() != len(self.MODEL.files):
-                self.fileslider.setMaximum(len(self.MODEL.files))
+            if self.fileslider.maximum() != nfiles:
+                self.fileslider.setMaximum(nfiles)
             if self.fileslider.value() != self.MODEL.fileindex+1:
                 self.fileslider.setValue(self.MODEL.fileindex+1)
         else:
@@ -632,10 +637,10 @@ class ExamineEyeDataWidget(QtGui.QWidget):
             x,y = ed.getLeft()
             v   = ed.getLeftVelocity()         
             self.lsignal.plotData(x, y, v, times, thresl, _leftl)
-            if MM.smooth:
+            if MM[MM.SMOOTH]:
                 sv = ed.getLeftVelocity(True)
                 self.lsignal.plotSmoothed(sv, times, _smoothl)
-            if MM.draw_saccades:
+            if MM[MM.DRAWSACCADES]:
                 self.lsignal.plotSaccades(sacl, x, y, times)
             else:
                 self.lsignal.plotFixations(fixl, x, y, times)
@@ -645,10 +650,10 @@ class ExamineEyeDataWidget(QtGui.QWidget):
             x,y = ed.getRight()
             v   = ed.getRightVelocity()         
             self.rsignal.plotData(x, y, v, times, thresr, _rightl)
-            if MM.smooth:
+            if MM[MM.SMOOTH]:
                 sv = ed.getRightVelocity(True)
                 self.rsignal.plotSmoothed(sv, times, _smoothl)
-            if MM.draw_saccades:
+            if MM[MM.DRAWSACCADES]:
                 self.rsignal.plotSaccades(sacr, x, y, times)
             else:
                 self.rsignal.plotFixations(fixr, x, y, times)
@@ -658,7 +663,9 @@ class ExamineEyeDataWidget(QtGui.QWidget):
         lx, ly = ed.getLeft()
         rx, ry = ed.getRight()
 
-        self.gazeplot.plotGazePicture(trial.stimulus, MM.stim_dir, lx, ly, rx, ry)
+        stimdir = MM[MM.DIRS][configfile.STIMDIR]
+
+        self.gazeplot.plotGazePicture(trial.stimulus, stimdir, lx, ly, rx, ry)
 
         self.lsignal.draw()
         self.rsignal.draw()
