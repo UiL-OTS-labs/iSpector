@@ -167,7 +167,6 @@ class Controller :
         '''
         Store the default open directory
         '''
-        print "dir = ", d
         if p.isdir(d):
             dirs = self.model[self.model.DIRS]
             dirs[configfile.FILEDIR] = d
