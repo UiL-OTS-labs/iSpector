@@ -782,12 +782,24 @@ class AscExtractorGui(QtGui.QMainWindow):
 
             # Obtain filename
             absoutput = self._createOutputFilename(experiment, fname, outdir)
+            if not absoutput:
+                continue
 
             # Determine our own fixations and saccades.
             for t in experiment.trials:
                 if t.containsGazeData() == True:
-                    eyedata = EyeData(cmdargs.ARGS.threshold,
-                            cmdargs.ARGS.nthres, cmdargs.ARGS.smooth)
+                    thres = self.MODEL[self.MODEL.THRESHOLD]
+                    nthres= self.MODEL[self.MODEL.NTHRESHOLD]
+                    smooth= self.MODEL[self.MODEL.SMOOTH]
+                    winsz = self.MODEL[self.MODEL.SMOOTHWIN]
+                    order = self.MODEL[self.MODEL.SMOOTHORDER]
+                    eyedata = EyeData(
+                            thres,
+                            nthres,
+                            smooth,
+                            winsz,
+                            order
+                            )
                     eyedata.processTrial(t, True)
                     lfixes, rfixes = eyedata.getFixations()
                     rsacs , lsacs  = eyedata.getSaccades()

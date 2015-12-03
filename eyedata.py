@@ -7,7 +7,7 @@ from scipy.stats import nanmean
 from scipy.stats import nanmedian
 import scipy as sp
 from tempsignal import savitzky_golay #newer version of scipy provide thereown version
-import arguments as cmdargs
+#import arguments as cmdargs
 from eyelog import *
 
 def generateXCoors(gazeentrylist):
@@ -31,6 +31,8 @@ def getValueArray(gazentrylist, generator):
 
 class EyeData:
     '''
+    \brief Finds fixations and saccades in eyemovement signals
+
     This class uses an eyetrial to obtain the eyetracking data of
     one trial and is able to plot that data and generate the results.
     '''
@@ -41,21 +43,25 @@ class EyeData:
     _ef = 1
     '''end fixation'''
 
-    def __init__(self, method, n, smooth=True ):
+    def __init__(self, method, n, smooth, smootwinsize, smoothorder):
         '''
         Create a eyedata object that contains the signals for the left and righteye
         when available in the eyetrial instance.
 
-        @param smooth this is needed when one wants to used smooted
+
+        @param method which method do use to find an indication of the noise.
+               "mean" by taking the average of the signal "median" the median.
+        @param n set the threshold on n times the result of the outcome of method.
+        @param smooth this must be set to True when one wants to used smooted
                data to obtain the fixations.
-        @param method with method should be used to differentiate fixations
-               from saccades.
+        @param method Valid is "mean" "median", this is used to determine the threshold.
+               for what should be considered noise.
         @param n is how many times the method is used to determine the threshold
         '''
         np.seterr('raise')
         self.smooth     = smooth
-        self.smoothwin  = cmdargs.ARGS.swin
-        self.smoothorder= cmdargs.ARGS.sorder
+        self.smoothwin  = smootwinsize
+        self.smoothorder= smoothorder
         self.method     = method
         self.nmethod    = n
         self.xgazeleft  = np.array([])

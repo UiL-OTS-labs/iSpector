@@ -443,11 +443,13 @@ class ExamineDataModel(object):
         trial = self.trials[self.trialindex]
         # We only want to read the model thus no need to get the controller
         MM = self.MAINWIN.getModel()[0]
-        thres = MM[MM.THRESHOLD]
-        nthres= MM[MM.NTHRESHOLD]
-        smooth= MM[MM.SMOOTH]
+        thres   = MM[MM.THRESHOLD]
+        nthres  = MM[MM.NTHRESHOLD]
+        smooth  = MM[MM.SMOOTH]
+        win     = MM[MM.SMOOTHWIN]
+        order   = MM[MM.SMOOTHORDER]
 
-        self.eyedata = EyeData(thres, nthres, smooth)
+        self.eyedata = EyeData(thres, nthres, smooth, win, order)
         self.eyedata.processTrial(self.trials[self.trialindex])
 
 class ExamineDataController(object):
