@@ -17,6 +17,7 @@ import os.path as p
 import ievent
 import statusbox
 import configfile
+import iSpectorVersion
 
 LOGO = "iSpectorLogo.svg"
 
@@ -600,7 +601,7 @@ class AscExtractorGui(QtGui.QMainWindow):
     '''
 
     ## window title, can still be improved
-    _WINDOW_TITLE = "iSpector for Fixation(als het met eye begint zal het wel goed zijn)"
+    _WINDOW_TITLE = iSpectorVersion.getVersion() + " (if it starts with eye it \"must\" be good)"
 
     def __init__(self, model):
         ''' Inits the main window '''
