@@ -2,6 +2,7 @@
 
 import re
 from eyelog import *
+import statusmessage as sm 
 
 def getLogEntry(splitline):
     n = int(splitline[0])
@@ -191,7 +192,7 @@ def parseEyeFile(filename):
         entries = extractCsvLog(lines)
     except ValueError as e:
         #print e
-        pr.appendError((CsvError, e))
+        pr.appendError((CsvError, e, sm.StatusMessage.warning))
     if entries:
         pr.setEntries(entries)
         return pr
@@ -201,5 +202,7 @@ def parseEyeFile(filename):
         if not entries:
             raise RuntimeError("No usable data found")
     except Exception as e:
-        pr.appendError((AscError, e))
+        pr.appendError((AscError, e, sm.StatusMessage.warning))
+        pr.appendError(("Unable to parse: ",
+                filename, sm.StatusMessage.error))
     return pr

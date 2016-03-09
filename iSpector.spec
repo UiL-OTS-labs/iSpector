@@ -3,9 +3,11 @@
 block_cipher = None
 
 #added files Not needed to build, but to run the program.
-#               ( path to file            , output directory)
-added_files = [ ('./logo/iSpectorLogo.ico','logo'),
-                ('iSpectorLogo.svg','.')
+#               ( path to file              , output directory)
+added_files = [ ('./logo/iSpectorLogo.ico'  ,'logo'),
+                ('iSpectorLogo.svg'         ,'.'),
+                ('./images/error.svg'       , './images'),
+                ('./images/warning.svg'     , './images')
                 ]
                 
 
