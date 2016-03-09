@@ -1,3 +1,5 @@
+Install a standalone on windows.
+
 Recommendations to get iSpecter to work. This is mainly written for awfull OS-es that don't ship
 with apt-get or yum or equivalent to install all neccessary dependencies.
 
@@ -30,3 +32,8 @@ to stderr.
 5   Now it should run succesfully.
 6   Optional: run pyinstaller with all flag and add the --windowed flag to make a more
     typical windows program
+
+After these steps have run successfully you have a standalone iSpector in the dist folder.
+You need to run 'makensis iSpector-installer.nsi' This will create a windows installer.
+
+you are ready.
