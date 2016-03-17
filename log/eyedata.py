@@ -6,8 +6,7 @@ from scipy.misc import imread
 from scipy.stats import nanmean
 from scipy.stats import nanmedian
 import scipy as sp
-from tempsignal import savitzky_golay #newer version of scipy provide thereown version
-#import arguments as cmdargs
+from utils.tempsignal import savitzky_golay #newer version of scipy provide thereown version
 from eyelog import *
 
 def generateXCoors(gazeentrylist):
