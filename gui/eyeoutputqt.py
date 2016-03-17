@@ -4,14 +4,14 @@ import numpy as np
 from scipy.misc import imread
 import scipy as sp
 
-import arguments as cmdargs
+#import arguments as cmdargs
 import os.path
-from eyeexperiment import EyeExperiment
-from parseeyefile import parseEyeFile
-from eyedata import EyeData 
-from eyelog import LogEntry
+from log.eyeexperiment import EyeExperiment
+from log.parseeyefile import parseEyeFile
+from log.eyedata import EyeData 
+from log.eyelog import LogEntry
 import statusmessage as sm
-import configfile 
+import utils.configfile 
 
 
 from PyQt4 import QtGui, QtCore
@@ -665,7 +665,7 @@ class ExamineEyeDataWidget(QtGui.QWidget):
         lx, ly = ed.getLeft()
         rx, ry = ed.getRight()
 
-        stimdir = MM[MM.DIRS][configfile.STIMDIR]
+        stimdir = MM[MM.DIRS][utils.configfile.STIMDIR]
 
         self.gazeplot.plotGazePicture(trial.stimulus, stimdir, lx, ly, rx, ry)
 

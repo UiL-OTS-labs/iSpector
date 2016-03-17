@@ -2,7 +2,7 @@
 
 import re
 from eyelog import *
-import statusmessage as sm 
+import gui.statusmessage as sm 
 
 def getLogEntry(splitline):
     n = int(splitline[0])

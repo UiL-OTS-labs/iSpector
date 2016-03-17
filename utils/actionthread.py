@@ -18,7 +18,7 @@ class ActionRunner(t.Thread):
     def run (self):
         if type(self.argument) == tuple:
             self.action(*self.argument)
-        else
+        else:
             self.action(argument)
         self.finish()
     
