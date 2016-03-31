@@ -431,7 +431,7 @@ class ExamineDataModel(object):
             raise RuntimeError("The control flow shouldn't get here.")
 
         if not entries:
-            return
+            return False
 
         self.experiment = EyeExperiment(entries)
         self.trials     = self.experiment.trials
@@ -511,9 +511,11 @@ class ExamineDataController(object):
         self.setTrialIndex(self.model.trialindex - 1)
 
 class ExamineEyeDataWidget(QtGui.QWidget):
+
     '''
     Display a the EyeData of a number of files
     '''
+
     LEFT_EYE_STR   = "left eye signal"
     RIGHT_EYE_STR  = "right eye signal"
     GAZE_PLOT_STR  = "Gaze plot"
