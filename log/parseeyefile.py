@@ -1,9 +1,23 @@
 #!/usr/bin/env python
 
+##
+# \file parseeyefile.py
+# Contains functions to load eyefiles from disk.
+#
+# \package log
+#
+
 import re
 from eyelog import *
 import gui.statusmessage as sm 
 
+##
+# Turns a list of words into a LogEntry
+#
+# @param splitline a list of the words of one single line in a logfile of the
+# csv format
+#
+# \return LogEntry
 def getLogEntry(splitline):
     n = int(splitline[0])
     l = splitline
@@ -41,6 +55,11 @@ def getLogEntry(splitline):
         raise ValueError("Line: \"" + LogEntry.SEPARATOR.join(splitline) + "\" is invalid")
     return entry
 
+##
+# read a CsvLog from a list of lines of a csv file.
+#
+# \return a list of all the logentries of the lines
+#
 def extractCsvLog(lines):
     logentries = []
     n = 1 # use this to mark location in file where the error is found
@@ -53,11 +72,12 @@ def extractCsvLog(lines):
         n+=1
     return logentries
 
+##
+# Read the lines of a EyelinkAscii format.
+# @param a list of lines in a Eyelink asc format.
+# \return a list of logentries.
+#
 def extractAscLog(lines):
-    '''
-        Examines each line to check whether it has got valid input
-        if so it appends it to the logentries
-    '''
     logentries = []
     # asclog has no mention of time in zep or the program
     zeptime = -1.0
@@ -147,40 +167,57 @@ def extractAscLog(lines):
     return logentries
 
 
+##
+# Result of parsing a eyemovement file.
+#
+# There can be many problems with parsing a file
+# This class returns the files or error that have
+# occured
+#
 class ParseResult:
 
-    """
-    There can be many problems with parsing a file
-    This class returns the files or error that have
-    occured
-    """
-
+    ##
+    # initialize a empty parseresult
     def __init__(self, entries=[], errors=[]):
-        """ """
+        ## a list of LogEntry
         self.entries = entries
+        ## a list of errors
         self.errors = errors
 
+    ##
+    # after parsing one can add entries with this function
     def setEntries(self, entries):
         self.entries = entries
 
+    ##
+    # returns a list of LogEntry or possibly an empty list.
     def getEntries(self):
         return self.entries
 
+    ##
+    # Set a list of errors to the error list.
+    # list of tuples of (string, StatusMessage.OK or StatusMessage.error or StatusMessage.warning)
     def setErrors(self, errorlist):
         self.errorlist
-
+    
+    ##
+    # appendErrors(to the list)
     def appendError(self, error):
         self.errors.append(error)
-        
+    
+    ##
+    # getErrors should be called when the entries are empty
     def getErrors(self):
         return self.errors
 
-
+##\brief Parses the filename
+#
+# This function first checks whether the file is a valid CsvFile as defined by iSpector
+# if this fails it tries to read the file as an Eyelink ascii format if this fails
+# it will add Parse errors to the parse result, otherwise it will add a list of LogEntry
+# to the ParseResult.
+# \returns ParseResult
 def parseEyeFile(filename):
-    '''
-    Parses the filename
-    returns ParseResult
-    '''
     CsvError = "Unable to parse file '{0}' as .csv file".format(filename)
     AscError = "Unable to parse file '{0}' as .asc file".format(filename)
 

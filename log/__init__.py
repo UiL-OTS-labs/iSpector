@@ -5,9 +5,3 @@ __all__ = [ "eyedata",
             "eyelog",
             "parseeyefile"
             ]
-
-import eyedata
-import eyeexperiment
-import eyelog
-import parseeyefile
-

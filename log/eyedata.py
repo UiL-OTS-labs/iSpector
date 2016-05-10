@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 
+##
+# \file eyedata.py
+#
+# EyeData contains the EyeData class which helps in detecting 
+# fixations and saccades.
+#
+# \package log
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.misc import imread
@@ -9,18 +17,35 @@ import scipy as sp
 from utils.tempsignal import savitzky_golay #newer version of scipy provide thereown version
 from eyelog import *
 
+##
+# Generator to extract X coordinates
+# @param gazeentrylist an iterable with gazeentries with only one type of logentries
+# eg LGAZE or RGAZE
 def generateXCoors(gazeentrylist):
     for i in gazeentrylist:
         yield i.x
 
+##
+# Generator to extract Y coordinates
+# @param gazeentrylist an iterable with gazeentries with only one type of logentries
+# eg LGAZE or RGAZE
 def generateYCoors(gazeentrylist):
     for i in gazeentrylist:
         yield i.y
 
+
+##
+# Generator to extract the times of the gazeetries
+# @param gazeentrylist an iterable with gazeentries with only one type of logentries
+# eg LGAZE or RGAZE
 def generateEyeTimes(gazeentrylist):
     for i in gazeentrylist:
         yield i.getEyeTime()
 
+##
+# Get a Numpy array with an eyesignal.
+# @param gazeentrylist a list with gazeentries
+#
 def getValueArray(gazentrylist, generator):
     output = np.zeros(len(gazentrylist))
     for i, el in enumerate(generator(gazentrylist)):
@@ -36,74 +61,119 @@ class EyeData:
     one trial and is able to plot that data and generate the results.
     '''
 
+    ## Marks a start fixation 
     _sf = -1
-    '''start fixation'''
 
+    ## Marks an end fixation
     _ef = 1
     '''end fixation'''
 
-    def __init__(self, method, n, smooth, smootwinsize, smoothorder):
-        '''
-        Create a eyedata object that contains the signals for the left and righteye
-        when available in the eyetrial instance.
-
-
-        @param method which method do use to find an indication of the noise.
-               "mean" by taking the average of the signal "median" the median.
-        @param n set the threshold on n times the result of the outcome of method.
-        @param smooth this must be set to True when one wants to used smooted
-               data to obtain the fixations.
-        @param method Valid is "mean" "median", this is used to determine the threshold.
-               for what should be considered noise.
-        @param n is how many times the method is used to determine the threshold
-        '''
-        np.seterr('raise')
+    ##
+    # Create a eyedata object that contains the signals for the left and righteye
+    # when available in the eyetrial instance.
+    #
+    # @param method which method do use to find an indication of the noise.
+    #       "mean" by taking the average of the signal "median" the median.
+    # @param n set the threshold on n times the result of the outcome of method.
+    # @param smooth whether or not smoothed signals should be used to determine
+    #        the values of fixations
+    # @param smoothwinsize the windowsize for the savitsky golay filter.
+    # @param smoothorder the order of the polynomial to fit the signal within
+    #        the window
+    def __init__(self, method, n, smooth, smoothwinsize, smoothorder):
+        #np.seterr('raise')
+        ## boolean whether or not to smooth the data
         self.smooth     = smooth
-        self.smoothwin  = smootwinsize
+        ## size of the smoothing window for the savitsky golay filter
+        self.smoothwin  = smoothwinsize
+        ## The polynomial order to which the signal is fitted while smoothing
         self.smoothorder= smoothorder
+        ## The method is either mean or median and used to determine the velocity threshold.
         self.method     = method
+        ## how many times the mean or median is taken to determine the final
+        #  threshold value
         self.nmethod    = n
+        ## The x signal for the left eye
         self.xgazeleft  = np.array([])
+        ## The smoothed signal for the left eye
         self.xgazelefts = np.array([])
+        ## The x coordinates for the right eye
         self.xgazeright = np.array([])
+        ## The smoothed x coordinates for the right eye
         self.xgazerights= np.array([])
+        ## The y signal for the left eye
         self.ygazeleft  = np.array([])
+        ## The smoothed y signal for the left y
         self.ygazelefts = np.array([])
+        ## the y signal for the right eye
         self.ygazeright = np.array([])
+        ## the smoothed y signal for the left eye.
         self.ygazerights= np.array([])
+        ## The velocity of the left eye
         self.velol      = np.array([])
+        ## The velocity of the right eye
         self.velor      = np.array([])
+        ## The smoothed velocity of the left eye
         self.velols     = np.array([])
+        ## The smoothed velocity of the right eye
         self.velors     = np.array([])
+        ## Helper array to find fixations of the left eye
         self.fixl       = np.array([])
+        ## Helper array to find fixations of the right eye
         self.fixr       = np.array([])
+        ## Helper array to find saccades of the left eye
         self.sacl       = np.array([])
+        ## Helper array to find saccades of the right eye
         self.sacr       = np.array([])
+        ## list of fixation of the left eye
         self.lfixlist   = []
+        ## list of fixation of the right eye
         self.rfixlist   = []
+        ## list of saccades of the left eye
         self.lsaclist   = []
+        ## list of saccades of the right eye
         self.rsaclist   = []
 
+    ## ProcessTrial determines fixations and saccades in one trial
+    # 
+    # ProcessTrials determines how fast an eye is moving. If the eye is moving
+    # a a speed below the threshold we conclude the eye fixating. In contrast
+    # if the speed is above the threshold we say the eye is saccading.
+    # In theory the eye could be in smoothpursuit mode, and EyeData would
+    # consider it a fixation or saccade falsely.
+    #
+    # @param eyetrial and EyeTrial instance
+    # @param overwritefix
+    # \todo implement parameter overwritefix there should be more trials parameters
+    # available. Perhaps it is better to contain trial/experiment meta data here.
+    # this class should be dedicated to eyemovement only.
     def processTrial(self, eyetrial, overwritefix=False):
-
+        ## The stimulus for this file
         self.stimfile   = eyetrial.stimulus
         self.xgazeleft  = getValueArray(eyetrial.lgaze, generateXCoors)
         self.ygazeleft  = getValueArray(eyetrial.lgaze, generateYCoors)
         self.xgazeright = getValueArray(eyetrial.rgaze, generateXCoors)
         self.ygazeright = getValueArray(eyetrial.rgaze, generateYCoors)
-        self.logfixl    = eyetrial.logfixl
-        self.logfixr    = eyetrial.logfixr
+        ## The logged fixations of the left eye
+        self.loglfix    = eyetrial.loglfix
+        ## The logged fixations of the right eye
+        self.logrfix    = eyetrial.logrfix
 
-        self.medvelol   = 0 #median velocity left
-        self.medvelor   = 0 #median velocity right 
+        ## the median velocity of the left eye
+        self.medvelol   = 0 
+        ## the median velocity of the right eye
+        self.medvelor   = 0
 
-        # Get times
+        ## vector of eyetimes of the left gaze
         self.lgazetimes = getValueArray(eyetrial.lgaze, generateEyeTimes)
+        ## vector of eyetimes of the right gaze
         self.rgazetimes = getValueArray(eyetrial.rgaze, generateEyeTimes)
         
         if self.hasLeftGaze():
+            ## approximation of the duration of a sample of the left eye
             self.lsampletime = sp.median(sp.diff(self.lgazetimes))
         if self.hasRightGaze():
+            ## approximation of the duration of a sample of the right eye
             self.rsampletime = sp.median(sp.diff(self.rgazetimes))
 
         # values with 0.0 as value should not be considered as data
@@ -138,24 +208,37 @@ class EyeData:
                 
 
         # compute differential signals
+
+        ## the differntial signal of the left x signal
         self.ldiffx = np.diff(self.xgazeleft)
+        ## the differntial signal of the left y signal
         self.ldiffy = np.diff(self.ygazeleft)
+        ## the differntial signal of the right x signal
         self.rdiffx = np.diff(self.xgazeright)
+        ## the differntial signal of the right y signal
         self.rdiffy = np.diff(self.ygazeright)
         
         if self.smooth == True:
             if self.hasLeftGaze():
+                ## smoothed version of self.ldiffx 
                 self.ldiffxs = np.diff(self.xgazelefts)
+                ## smoothed version of self.ldiffy 
                 self.ldiffys = np.diff(self.ygazelefts)
             if self.hasRightGaze():
+                ## smoothed version of self.diffx 
                 self.rdiffxs = np.diff(self.xgazerights)
+                ## smoothed version of self.rdiffy 
                 self.rdiffys = np.diff(self.ygazerights)
         else:
             if self.hasLeftGaze():
+                ## smoothed version of self.ldiffx 
                 self.ldiffxs = self.ldiffx 
+                ## smoothed version of self.ldiffy 
                 self.ldiffys = self.ldiffy
             if self.hasRightGaze():
+                ## smoothed version of self.rdiffx 
                 self.rdiffxs = self.rdiffx
+                ## smoothed version of self.rdiffy 
                 self.rdiffys = self.rdiffy
 
         # compute velocities
@@ -181,6 +264,7 @@ class EyeData:
 
         if len(self.velol) > 0:
             try :
+                ## the mean velocity of the left eye signal
                 self.meanvelol=nanmean(self.velol)
             except FloatingPointError as e:
                 print self.velol
@@ -190,9 +274,10 @@ class EyeData:
         
         if len(self.velor) > 0:
             try:
+                ## the mean velocity of the right eye signal
                 self.meanvelor=nanmean(self.velor)
             except FloatingPointError as e:
-                print self.velol
+                print self.velor
                 exit(e)
         else:
             self.meanvelor=float('nan')
@@ -230,17 +315,25 @@ class EyeData:
 #            #self._etAttachRSac()
 #            pass #TODO
 
+    ##
+    # sets the final threshold
+    #
+    # Determines the velocity threshold. A velocity below this threshold means
+    # at this point in the signal the eye is fixating, otherwise the eye
+    # is considered to be making a saccade.
+    #
+    # @param method find the base noise level based on the median or mean
+    # of the signal, the valid values are "mean" and "median"
+    # @param ntimes A float that tell many times we take the mean or median
+    # to determine the final value for the threshold.
+    #
     def _determineThreshold(self, method="mean", ntimes=1.0):
-        '''
-        This method determines the threshold for what is counted as fixation/saccade.
-        @param method must be "mean" or "median"
-        '''
         valid = ["mean", "median", "snr"]
-        #print method, ntimes
         if not method in valid:
             raise ValueError("Method must be one of " + str(valid))
 
         if method == "mean":
+            ## a tuple of thresholds of the left and right signal respectively
             self.threshold = self.meanvelol * ntimes, self.meanvelor * ntimes
         elif method == "snr":
             nan = float('nan')
@@ -266,15 +359,17 @@ class EyeData:
         else:
             self.threshold = self.medvelol * ntimes, self.medvelor * ntimes
 
+    ##
+    # This function tries to correct Fixations that are unreasonably short.
+    #
+    # This function examines fixations by duration
+    # it tries to remove fixations shorther than a
+    # certain duration. It tries to merge fixations if two
+    # are very close together and removes saccades in between.
+    # Otherwise if they are not close together, the fixation is removed
+    # and the two (if two) saccades are merged.
+    #
     def _fixFixSac(self, fixvec, sacvec, timevec, xgaze, ygaze, entrytype, duration = 50) :
-        '''
-        This function examines fixations by duration
-        it tries to remove fixations shorther than a
-        certain duration. It tries to merge fixations if two
-        are very close together and removes saccades in between.
-        Otherwise if they are not close together, the fixation is removed
-        and the two (if two) saccades are merged.
-        '''
         #TODO merge nearby fixations
         if (len(fixvec) != len(sacvec) or len(sacvec) != len(timevec) or len(timevec) == 0):
             raise ValueError("empty input or the length of the input is not equal")
@@ -410,6 +505,8 @@ class EyeData:
         '''
         et.lfix = self._getFixList(self.lgazetimes, self.fixl, self.xgazeleft, self.ygazeleft, LogEntry.LFIX)
 
+    ##
+    # Get a list of fixations
     def _getFixList(self, gazetimes, startendfix, xgaze, ygaze, entrytype):
         fixations = []
         if entrytype != LogEntry.LFIX and entrytype != LogEntry.RFIX :
@@ -432,27 +529,28 @@ class EyeData:
             fixations.append(FixationEntry(entrytype, 0, start, duration, meanx, meany))
         return fixations
 
+    ## Get the eyemovement raw signal of the left eye
+    # @param smoothed returns the smoothed signals
+    # 
+    # \return a tuple of the x and y signal as numpy arrays of the left eye.
     def getLeft(self, smoothed=False):
-        '''
-        Returns the signals of x and y as numpy arrays.
-        @param smoothed returns the smoothed signals
-
-        @returns tuple of x and y signal respectively
-        '''
         if smoothed == True:
             return self.xgazelefts, self.ygazelefts
         else:
             return self.xgazeleft, self.ygazeleft
     
+    ##
+    # Returns the velocity of the left eye
     def getLeftVelocity(self, smoothed=False):
-        '''
-        Returns the velocity of the left eye
-        '''
         if smoothed == True:
             return self.velols
         else:
             return self.velol
 
+    ## Get the eyemovement raw signal of the right eye
+    # @param smoothed returns the smoothed signals
+    # 
+    # \return a tuple of the x and y signal as numpy arrays of the right eye.
     def getRight(self, smoothed=False):
         '''
         Returns the signals of x and y as numpy arrays.
@@ -465,68 +563,71 @@ class EyeData:
         else:
             return self.xgazeright, self.ygazeright
     
+    ##
+    # Returns the velocity of the right eye
     def getRightVelocity(self, smoothed=False):
-        '''
-        Returns the velocity of the right eye
-        '''
         if smoothed == True:
             return self.velors
         else:
             return self.velor
 
+    ## Check whether the EyeData contains sample of the left eye
     def hasLeftGaze(self):
         return len (self.xgazeleft) > 0
 
+    ## Check whether the EyeData contains sample of the right eye
     def hasRightGaze(self):
         return len (self.xgazeright) > 0
 
+    ## return a tuple of times belonging to the right and left eye respectively
     def getTimes(self):
-        '''return a tuple of times'''
         return self.lgazetimes, self.rgazetimes
-
+    
+    ## 
+    # returns a tuple of vectors the first items contains a vector of leftfixations
+    # the second returns a vector with the right fixations. a -1 means a fixation
+    # starts and a 1 means a fixation ends
     def getFixVecs(self):
-        '''
-        returns a tuple of vectors the first items contains a vector of leftfixations
-        the second returns a vector with the right fixations. a -1 means a fixation
-        starts and a 1 means a fixation ends
-        '''
         return self.fixl, self.fixr
-
+    
+    ##
+    # returns a tuple of vectors, the first item contains a vector of  of the left
+    # saccade and the second returns the right saccades. a -1 means a saccade start
+    # and a 1 means fixation start.
     def getSacVecs(self):
-        '''
-        returns a tuple of vectors, the first item contains a vector of  of the left
-        saccade and the second returns the right saccades. a -1 means a saccade start
-        and a 1 means fixation start.
-        '''
         return self.sacl, self.sacr
 
+    ##
+    #Returns the found fixations
     def getFixations(self):
-        ''' Returns the found fixations '''
         return self.lfixlist, self.rfixlist
     
+    ##
+    #Return saccades in list
     def getSaccades(self):
-        ''' Return saccades in list'''
         return self.lsaclist , self.rsaclist
 
+    ##
+    # returns the velocity vectors of the left and right eye
     def getVelo(self, smooth=False):
-        ''' returns the velocity vectors of the left and right eye '''
         if (smooth):
             return self.velols, self.velors
         else:
             return self.velol, self.velor
 
+    ##
+    # returns a tuple with the median velocity of the left and right eye
+    # respectively
     def getMedVelo(self):
-        ''' returns a tuple with the median velocity of the left and right eye
-            respectively
-        '''
         return self.medvelol, self.medvelor
 
+    ##
+    # returns a tuple with the mean velocity of the left and right eye
     def getMeanVelo(self):
-        '''
-        returns a tuple with the mean velocity of the left and right eye
-        '''
         return self.meanvelol, self.meanvelor
 
+    ##
+    # returns a value of the threshold
     def getThreshold(self):
         return self.threshold
 
