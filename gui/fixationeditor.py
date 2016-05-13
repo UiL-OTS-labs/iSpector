@@ -52,6 +52,7 @@ class _TranslateFix(object):
         self._x = x
         ## the amount to translate a fixation in the y coordinate
         self._y = y
+
     ##
     # if fix is equal to the reference variable it is going to be translated
     # 
@@ -185,6 +186,7 @@ class FixationEditController(datamodel.EditDataController):
         # as a click
         self.click_time = 250.0
     
+
     ##
     # provide the model with the right transformation matrix
     def setTransformationMatrix(self, matrix):
@@ -209,7 +211,6 @@ class FixationEditController(datamodel.EditDataController):
             if self.press_event and self.release_time - self.press_time < self.click_time/1000:
                 self._registerClick(event)
             elif self.lb_pressed:
-                print "controller is saving edit"
                 self.saveEdit(event)
             self.lb_pressed = False
     
@@ -291,11 +292,17 @@ class FixationEditController(datamodel.EditDataController):
         self.model.setVector(vector)
         self.model.saveEdit()
         self.model.setVector((0.0,0.0))
-
+    
+    ##
+    # tries to pop one edit from the stack of edits of the model
+    #
     def undoEdit(self):
         super(FixationEditController, self).undoEdit()
         self.model.setSelected([])
 
+    ##
+    # tries to pop one edit from the stack of edits of the model
+    #
     def redoEdit(self):
         super(FixationEditController, self).redoEdit()
         self.model.setSelected([])
@@ -527,13 +534,6 @@ class FixationEditModel(datamodel.EditDataModel):
                                 )
         self.pushEdit(edit)
 
-#    ##
-#    # Loads a new file, and optionally offers to save the edits.
-#    def setFileIndex(self, n):
-#        if self.isExperimentModified():
-#            self.saveExperiment()
-#        super(FixationEditModel, self).setFileIndex(n)
-
     ##
     # adds the current trial to the current experiment if there is a difference
     #
@@ -672,7 +672,7 @@ class FixationUpdateCanvas(stimuluswidget.StimulusWidget, dataview.CustomDataVie
         edit    = self.MODEL.getCurrentEdit()
         
         # enable antialiasing of paths.
-        #painter.setRenderHint(painter.Antialiasing)
+        painter.setRenderHint(painter.Antialiasing)
         if edit:
             if self.MODEL.showLeft():
                 self._paintFixations(painter, edit.lfix  , blue , black, True)
@@ -690,7 +690,8 @@ class FixationUpdateCanvas(stimuluswidget.StimulusWidget, dataview.CustomDataVie
                 translatedlist  = map(translator, copy.deepcopy(self.MODEL.getSelected()))
                 self._paintFixations(painter, translatedlist, black, black)
         else:
-            print self.onCustomPaint, "No edit"
+            pass
+            #print self.onCustomPaint, "No edit"
     
     ##
     # Draws the cirles and the letters for the fixations.
@@ -780,7 +781,7 @@ class FixationUpdateCanvas(stimuluswidget.StimulusWidget, dataview.CustomDataVie
                 self.controller.redoEdit()
             elif event.key() == QtCore.Qt.Key_A:
                 self.controller.selectAll()
-            elif event.key() == QtCore.Qt.Key_Z:
+            elif event.key() == QtCore.Qt.Key_S:
                 self.controller.saveExperiment()
             else:
                 handled = False
@@ -823,7 +824,7 @@ class FixationUpdateCanvas(stimuluswidget.StimulusWidget, dataview.CustomDataVie
         # draw fixations and selections here
 
     def sizeHint(self):
-        return QtCore.QSize(1920* .75,1080 * .75)
+        return QtCore.QSize(1920 * .75, 1080 * .75)
     
 ##
 # A FixationEditCustomView allows editting of fixations.
@@ -854,9 +855,12 @@ class FixationEditCustomView(QtGui.QWidget, dataview.CustomDataView):
         self.fixationcanvas.updateFromModel()
         
 
-class FixationEditView(dataview.DataView):
+##
+# Simple class that just creates it's own custom_widget
+#
+# The custom_widget of this DataView allows edditing of fixations.
+class FixationEditView(dataview.EditDataView):
     
     def initCustomWidget(self):
-        #self.custom_widget = FixationEditCustomView(self.MODEL, self.controller)
+        ## The custom widget a gui.FixationUpdateCanvas
         self.custom_widget = FixationUpdateCanvas(self.MODEL, self.controller)
-    

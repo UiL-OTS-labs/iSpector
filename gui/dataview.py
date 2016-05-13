@@ -11,6 +11,7 @@
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 import datamodel
+import savedialog
 import os
 
 ##
@@ -48,7 +49,7 @@ class DataView(QtGui.QWidget):
     #             demonstrate
     # \param [in] controller a controller the view can uses to update the model.
     # \param [in] parent just passed to QWidget.__init__()
-    # \param [in] flags, the QtCore.Qt.WindowFlags
+    # \param [in] flags the QtCore.Qt.WindowFlags
     def __init__(self, model, controller, parent=None, flags=QtCore.Qt.Window) :
         super(DataView, self).__init__(parent=parent, flags=flags)
         ## a reference to the main window
@@ -220,3 +221,78 @@ version."
         self.controller.prevTrial()
         self.updateFromModel()
 
+##
+# Like DataView, but also usable to edit the experimental data.
+# 
+# Does almost the same as dataview, however it tries to save the data if the
+# user navigates to a new experiment, or when the view is closed.
+class EditDataView(DataView):
+    
+    ##
+    # Makes the controller save the experiment
+    #
+    def save(self):
+        ## \todo create a custom filedialog for loading and saving files.
+        cur = self.MODEL.getCurrentFileName()
+        Dir = os.path.dirname(cur)
+        fn= QtGui.QFileDialog.getSaveFileName(caption          = "Select input file(s)",
+                                              directory        = Dir,
+                                              filter           = "EyeData (*.csv *.asc);;all (*)",
+                                              selectedFilter   = "EyeData"
+                                              )
+        if fn:
+            self.controller.saveExperiment(fn)
+ 
+    ##
+    # Determine whether we must save the current experiment.
+    #
+    # firstly this function determines whether the experiment must be saved.
+    # If it must be saved is also is going to save it. And it determines
+    # whether we should advance to the next trial or allow closing
+    # of the view.
+    #
+    # \returns True if we should advance or False if the user cancelled the
+    # closing of the window or going to the next trial
+    def determineSaveExperiment(self):
+        if self.MODEL.isExperimentModified() or self.MODEL.isTrialModified():
+            dlg = savedialog.SaveDialog()
+            ret = dlg.exec_()
+            if      ret == dlg.Save:
+                self.save()
+            elif    ret == dlg.Cancel:
+                return False
+            #if ret is dlg.Discard just return True
+        return True
+    
+    ##
+    # Determines whether the experiment must be saved, and whether
+    # to advance to the next trial.
+    def nextTrial(self):
+        if self.MODEL.getTrialIndex() == self.MODEL.getTrialMaxIndex():
+            if self.determineSaveExperiment():
+                super(EditDataView, self).nextTrial()
+            else:
+                return
+        return super(EditDataView, self).nextTrial()
+    
+    ##
+    # Determines whether the experiment must be saved, and whether
+    # to return to the previous trial.
+    def prevTrial(self):
+        if self.MODEL.getTrialIndex() == 0:
+            if self.determineSaveExperiment():
+                return super(EditDataView, self).nextTrial()
+            else:
+                return
+        return super(EditDataView, self).nextTrial()
+
+    ##
+    # Determines whether the experiment must be saved, and whether
+    # to close the window.
+    def closeEvent(self, event):
+        if self.determineSaveExperiment():
+            return super(EditDataView, self).closeEvent(event)
+        else:
+            event.ignore();
+
+            

@@ -9,7 +9,8 @@ class SaveDialog (QtGui.QMessageBox):
                 "would you like to save the experiment?"
                 )
     _title   = "Save Experiment"
-    _present_buttons = QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard
+    _present_buttons = QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard | \
+                       QtGui.QMessageBox.Cancel
     
     def __init__(self):
         super(SaveDialog, self).__init__()

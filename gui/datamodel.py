@@ -129,6 +129,22 @@ class DataModel(object):
         self.loadEyeFile()
 
     ##
+    # Returns the current file index
+    def getFileIndex(self):
+        return self.fileindex
+
+    ##
+    # returns the current filename
+    # \return a string or None is not applicable
+    def getCurrentFileName(self):
+        return self.files[self.fileindex]
+
+    ##
+    # Returns the maximum allowed file index
+    def getMaxFileIndex(self):
+        return len(self.files) - 1
+
+    ##
     # Set a new trialindex
     #
     # Set a new trial to display. If the n is equal to the self.trialindex
@@ -146,6 +162,17 @@ class DataModel(object):
         # set the new trial.
         self.trialindex = n
         self.onNewTrial()
+    
+    ##
+    # Returns the current trial index
+    def getTrialIndex(self):
+        return self.trialindex
+
+    ##
+    # Return the maximum trial index
+    def getTrialMaxIndex(self):
+        return len(self.trials) - 1
+
 
     ##
     # onFileLoaded is called when a new file has been loaded.
@@ -351,10 +378,14 @@ class EditDataModel (DataModel):
     # if someone sets the file index back to the currently
     # editted file, they will see the updated file and not the 
     # original file.
-    def saveExperiment(self):
-        print "saving experiment"
-        savedlg = savedialog.SaveDialog()
-        savedlg.exec_()
+    #
+    # \param fn the filename to save the experiment to
+    def saveExperiment(self, fn):
+        # make sure the last edits are saved to the current trial
+        if self.isEditted():
+            self.addTrialToCurrentExperiment()
+        raise RuntimeError("Implement this function")
+
     
     ##
     # add Edits from the current experiment to the trial inside
@@ -373,7 +404,6 @@ class EditDataModel (DataModel):
     #
     def onFileLoaded(self):
         #super(EditDataModel, self).onFileLoaded() raise NotImplementedError
-        print "onFileLoaded"
         self._current_experiment = copy.deepcopy(self.experiment)
 
     ##
@@ -382,7 +412,6 @@ class EditDataModel (DataModel):
     # Clears the stack. Derived class is responsible to push some new
     # information on the stack to display.
     def onNewTrial(self):
-        print "onNewTrial"
         super(EditDataModel, self).onNewTrial()
         # Clear the stack copy the current trial and push the initial edit
         self._clearStack()
@@ -401,7 +430,7 @@ class EditDataModel (DataModel):
     def isExperimentModified(self):
         if not self.experiment:
             return False
-        if self._current_experiment != self.experiment:
+        if self._current_experiment != self.experiment or self.isEditted():
             return True
         return False
     
@@ -438,9 +467,6 @@ class EditDataModel (DataModel):
         print self, "setFileIndex", self.fileindex, " to ", n
         if n == self.fileindex:
             return
-
-        if self.isExperimentModified():
-            self.saveExperiment()
 
         super(EditDataModel, self).setFileIndex(n)
 
@@ -584,6 +610,13 @@ class EditDataController (ExamineDataController):
     # \todo check whether the parent __init__ can't solve all of this.
     def __init__(self, model):
         super(EditDataController, self).__init__(model)
+
+    ##
+    # Save the experiment.
+    #
+    # \param fn the filename for the new experiment.
+    def saveExperiment(self, fn):
+        self.model.saveExperiment(fn)
     
     ##
     # Reloads the model with the current setting from the main window.
@@ -606,6 +639,20 @@ class EditDataController (ExamineDataController):
     def setFileIndex(self, n):
         if self.model.fileindex == n:
             return
+        if self.model.isExperimentModified():
+            dlg = savedialog.SaveDialog()
+            ret = dlg.exec_()
+
+            if      ret == dlg.Cancel:
+                return
+            elif    ret == dlg.Save:
+                # Start filechooser first
+                self.model.saveExperiment()
+            elif    ret == dlg.Discard:
+                pass
+            else:
+                raise RuntimeError("Save dialog returned unexpected value")
+            
         super(EditDataController, self).setFileIndex(n)
 
     ##
@@ -616,6 +663,9 @@ class EditDataController (ExamineDataController):
     def setTrialIndex(self, n):
         if n == self.model.trialindex:
             return
+
+        ## TODO examine why self.modle.setTrialIndex has to be called directly
+        #       instead via the parent.
         self.model.setTrialIndex(n)
 
         #super(EditDataController, self).setTrialIndex(n)

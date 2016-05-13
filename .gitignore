@@ -60,5 +60,4 @@ target/
 doc/
 
 # vim swap files
-*.swp
-*.swo
+*.sw[a-z]
