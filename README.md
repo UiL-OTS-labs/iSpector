@@ -1,7 +1,14 @@
 # iSpector
 Tool to inspect, extract and analyze eye movement data
 
+## Depencies
+iSpector is dependent on a number of python packages in order to run:
+1. matplotlib
+2. python-qt4 (PyQt4)
+3. numpy
+4. scipy
 
+## iSpector file structure
 This describes the directory layout.
 * data/
     * Contains sample data to analyse with iSpector
