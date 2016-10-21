@@ -64,10 +64,6 @@ class LogEntry (object):
     def __init__(self, entrytype, zeptime, eyetime):
         ## The type of entry of this LogEntry
         self.entrytype  = entrytype
-        ## \deprecated
-        self.zeptime    = zeptime
-        ## The time in ms when an event occurred relative to the time
-        # of the eyetracker.
         self.eyetime    = eyetime
 
     ## Tell what kind of LogEntry this is.
@@ -194,8 +190,8 @@ class GazeEntry(LogEntry) :
     # \param x float of the x-coordinate of the gaze
     # \param y float of the y-coordinate of the gaze
     # \param pupil the pupilsize during the gazesample
-    def __init__(self, entrytype, zeptime, eyetime, x, y, pupil) :
-        super(GazeEntry, self).__init__(entrytype, zeptime, eyetime)
+    def __init__(self, entrytype, eyetime, x, y, pupil) :
+        super(GazeEntry, self).__init__(entrytype, eyetime)
         ## the x coordinate of the gaze sample
         self.x = x
         ## the y coordinate of the gaze sample
@@ -211,7 +207,7 @@ class GazeEntry(LogEntry) :
 ##
 #An entry in a logfile that logs the gaze compatible for Fixation program(Cozijn)
 class AscGazeEntry(LogEntry):
-
+    
     ## 
     # \param lgaze a GazeEntry for the left eye
     # \param rgaze a GazeEntry for the right eye
@@ -258,14 +254,12 @@ class FixationEntry(LogEntry):
     # Init a fixation entry
     #
     # \param entrytype  Must be LogEntry.LFIX or LogEntry.RFIX
-    # \param zeptime    deprecated
     # \param eyetime    The time (ms) on the eyetracker when the fixation starts.
     # \param eyedur     The duration of the fixation.
     # \param x          The x coordinate of the fixation
     # \param y          The y coordinate of the fixation
-    def __init__(self, entrytype, zeptime, eyetime, eyedur, x, y):
-        super(FixationEntry,self).__init__(entrytype, zeptime, eyetime)
-        ## the x coordinate of this fixation
+    def __init__(self, entrytype, eyetime, eyedur, x, y):
+        super(FixationEntry,self).__init__(entrytype, eyetime)
         self.x = x
         ## the y coordinate of this fixation
         self.y = y
@@ -298,7 +292,7 @@ class FixationEndEntry(LogEntry):
             entry = LogEntry.FIXENDR
         else:
             raise ValueError("Fixation entry should be initialized with LFIX or RFIX")
-        super(FixationEndEntry, self).__init__(entry, time, time)
+        super(FixationEndEntry, self).__init__(entry, time)
        
     ##
     # Create a string from self in Eyelink ascii format
@@ -323,11 +317,10 @@ class FixationEndEntry(LogEntry):
 class MessageEntry(LogEntry):
     
     ##
-    # \param zeptime deprecated
     # \param eyetime the time of the message in eyetracking time
     # \param message a used defined string
-    def __init__(self, zeptime, eyetime, message):
-        super(MessageEntry, self).__init__(LogEntry.MESSAGE, zeptime, eyetime)
+    def __init__(self, eyetime, message):
+        super(MessageEntry, self).__init__(LogEntry.MESSAGE, eyetime)
         ## the message of this Message entry
         self.message = message
 
@@ -346,7 +339,6 @@ class SaccadeEntry(LogEntry):
     # Initialize a SaccadeEntry
     #
     # \param et must be LogEntry.LSAC or LogEntry.ESAC
-    # \param zeptime deprecated
     # \param eyetime the time (ms) on eyetracker when the saccade started
     # \param duration the duration(ms) of the saccade
     # \param xstart starting x coordinate.
@@ -355,7 +347,6 @@ class SaccadeEntry(LogEntry):
     # \param yend end y coordinate.
     def __init__(self,
                  et,
-                 zeptime,
                  eyetime,
                  duration,
                  xstart,
@@ -363,7 +354,7 @@ class SaccadeEntry(LogEntry):
                  xend,
                  yend
                  ):
-        super(SaccadeEntry, self).__init__(et, zeptime, eyetime)
+        super(SaccadeEntry, self).__init__(et, eyetime)
         ## x coordinate of the start
         self.xstart = xstart
         ## y coordinate of the start
@@ -403,7 +394,7 @@ class SaccadeEndEntry(LogEntry):
             entry = LogEntry.SACCENDL
         else:
             raise ValueError("No saccade to init SaccadeEndEntry")
-        super(SaccadeEndEntry, self).__init__(entry, start, start)
+        super(SaccadeEndEntry, self).__init__(entry, start)
 
     ##
     # Create a string from self in Eyelink ascii format
@@ -456,7 +447,7 @@ class StartEntry(LogEntry):
         self.eye = eye
         ## tells which line ending must be used
         self.le  = le
-        super(StartEntry, self).__init__(LogEntry.BEGIN, time, time)
+        super(StartEntry, self).__init__(LogEntry.BEGIN, time)
 
     ##
     # Create a string from self in Eyelink ascii format
@@ -496,7 +487,7 @@ class EndEntry(LogEntry):
     ##
     # Inits an end entry
     def __init__(self, time):
-        super(EndEntry, self).__init__(LogEntry.END, time, time)
+        super(EndEntry, self).__init__(LogEntry.END, time)
 
     ##
     # Create a string from self in Eyelink ascii format

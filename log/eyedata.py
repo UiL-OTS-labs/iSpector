@@ -408,7 +408,8 @@ class EyeData:
                 continue
             duration = end - start
             saccades.append(
-                    SaccadeEntry(et, start, start, duration, startfix.x, startfix.y, endfix.x, endfix.y)
+                    SaccadeEntry(et, start, duration, startfix.x,
+                                 startfix.y, endfix.x, endfix.y)
                     )
         sacvec *= 0
         for sac in saccades:
@@ -526,7 +527,9 @@ class EyeData:
                 raiseValueError("Endtime before start time")
             meanx = sp.mean(xgaze[boolvec])
             meany = sp.mean(ygaze[boolvec])
-            fixations.append(FixationEntry(entrytype, 0, start, duration, meanx, meany))
+            fixations.append(
+                FixationEntry(entrytype, start, duration, meanx, meany)
+                )
         return fixations
 
     ## Get the eyemovement raw signal of the left eye

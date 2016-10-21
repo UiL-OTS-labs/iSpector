@@ -28,31 +28,29 @@ def getLogEntry(splitline):
                           float(l[1]),
                           float(l[2]),
                           float(l[3]),
-                          float(l[4]),
-                          float(l[5])
+                          float(l[4])
                           )
     elif n == LogEntry.LFIX or n == LogEntry.RFIX:
-        e, zptime, eyetime, x, y, dur = int(l[0]),\
-                                        float(l[1]),\
-                                        float(l[2]),\
-                                        float(l[3]),\
-                                        float(l[4]),\
-                                        float(l[5])
+        e, eyetime, x, y, dur = int(l[0]),\
+                                float(l[1]),\
+                                float(l[2]),\
+                                float(l[3]),\
+                                float(l[4])
 
-        entry = FixationEntry(e, zptime, eyetime, dur, x, y)
+        entry = FixationEntry(e, eyetime, dur, x, y)
     
     elif n == LogEntry.STIMULUS:
         #FIXME
         raise RuntimeError("Implement the stimulus log entry")
     elif n == LogEntry.MESSAGE:
         #insert tabs back beyond l[3] and strip end of line chars
-        stripped_string = "\t".join(l[3:]).strip("\r\n")
+        stripped_string = "\t".join(l[2:]).strip("\r\n")
         entry = MessageEntry(float(l[1]),
-                             float(l[2]),
                              stripped_string
                              )
     else:
-        raise ValueError("Line: \"" + LogEntry.SEPARATOR.join(splitline) + "\" is invalid")
+        raise ValueError("Line: \"" + LogEntry.SEPARATOR.join(splitline) +
+                                      "\" is invalid")
     return entry
 
 ##
@@ -68,7 +66,9 @@ def extractCsvLog(lines):
             splitline = i.split(LogEntry.SEP);
             logentries.append(getLogEntry(splitline))
         except Exception as e:
-            raise ValueError("unable to parse line {1}: \"{0}\"".format(i, n) + str(e))
+            raise ValueError(
+                    "unable to parse line {1}: \"{0}\"".format(i, n) + str(e)
+                    )
         n+=1
     return logentries
 
@@ -78,9 +78,12 @@ def extractCsvLog(lines):
 # \return a list of logentries.
 #
 def extractAscLog(lines):
+    '''
+        Examines each line to check whether it has got valid input
+        if so it appends it to the log entries
+    '''
     logentries = []
     # asclog has no mention of time in zep or the program
-    zeptime = -1.0
     #float between captured in regex group
     cflt = r"([-+]?[0-9]*\.?[0-9]+)"
     # match a message in the log
@@ -90,7 +93,7 @@ def extractAscLog(lines):
         )
     #monosample would also match a duo sample(sample with both eyes, where the first three columns are assumed to be the left eye and the 2nd three columns belong to the right eye
     monosample = re.compile(r"^(\d+)\s+" + cflt + r"\s+" + cflt + r"\s+" + cflt + r".+$")
-    #matches a end fixation, start fixations are ignorred
+    #matches a end fixation, start fixations are ignored
     endfix = re.compile(
         r"^EFIX\s+(R|L)\s+(\d+)\s+(\d+)\s+(\d+)\s+" + cflt + r"\s+" + cflt + r"\s+(\d+).*"
         )
@@ -102,7 +105,7 @@ def extractAscLog(lines):
     for i in lines:
         m = msgre.search(i)
         if m:
-            e  = MessageEntry(zeptime, float(m.group(1)), m.group(2))
+            e  = MessageEntry(float(m.group(1)), m.group(2))
             logentries.append(e)
             continue
         m = duosample.search(i)
@@ -116,8 +119,8 @@ def extractAscLog(lines):
                 rx = float(m.group(5))
                 ry = float(m.group(6))
                 rp = float(m.group(7))
-                lgaze = GazeEntry(LogEntry.LGAZE, zeptime, eyetime, lx, ly, lp)
-                rgaze = GazeEntry(LogEntry.RGAZE, zeptime, eyetime, rx, ry, rp)
+                lgaze = GazeEntry(LogEntry.LGAZE, eyetime, lx, ly, lp)
+                rgaze = GazeEntry(LogEntry.RGAZE, eyetime, rx, ry, rp)
                 logentries.append(lgaze)
                 logentries.append(rgaze)
             except ValueError as v:
@@ -141,9 +144,9 @@ def extractAscLog(lines):
             #threat all gazes as left gazes
             gaze = None
             if isleft:
-                gaze = GazeEntry(LogEntry.LGAZE, zeptime, eyetime, lx, ly, lp)
+                gaze = GazeEntry(LogEntry.LGAZE, eyetime, lx, ly, lp)
             else:
-                gaze = GazeEntry(LogEntry.RGAZE, zeptime, eyetime, lx, ly, lp)
+                gaze = GazeEntry(LogEntry.RGAZE, eyetime, lx, ly, lp)
             logentries.append(gaze)
             continue
         m = endfix.search(i)
@@ -157,9 +160,9 @@ def extractAscLog(lines):
             y = float(m.group(6))
             fixentry = None
             if (eyetype == "R"):
-                fixentry = FixationEntry(LogEntry.RFIX, zeptime, fixstart, duration, x, y)
+                fixentry = FixationEntry(LogEntry.RFIX, fixstart, duration, x, y)
             elif (eyetype == "L"):
-                fixentry = FixationEntry(LogEntry.LFIX, zeptime, fixstart, duration, x, y)
+                fixentry = FixationEntry(LogEntry.LFIX, fixstart, duration, x, y)
             else:
                 raise ValueError("Invalid fixation end: " + i)
             logentries.append(fixentry)
