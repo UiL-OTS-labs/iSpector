@@ -50,10 +50,20 @@ class EyeTrial(object):
         self.logrsac= []
         ## the logged saccades by the eyetracker of the right eye
         self.logavgsac= []
+        ## meta trial information or samples that are precede the trial start
+        self.meta   = []
 
+    ##
+    # instance equality
+    #
+    # \return True if two instances of EyeTrial are equal, false otherwise.
     def __eq__(self, rhs):
         return type(self) is type(rhs) and self.__dict__ == rhs.__dict__
-
+    
+    ##
+    # instance inequality
+    #
+    # \return True if two instances of EyeTrial are not equal, false otherwise.
     def __ne__(self, rhs):
         return not (self == rhs)
     
@@ -72,6 +82,11 @@ class EyeTrial(object):
             self.logrfix.append(entry)
         else:
             raise ValueError("Invalid type of logentry added to EyeTrial.")
+    
+    ##
+    # Add meta data to trial
+    def addMeta(self, meta):
+        self.meta.append(meta)
     
     ##
     # Set the stimulus for this file
@@ -160,6 +175,43 @@ class EyeTrial(object):
             fix.eyetime += diff
             fix.duration -= diff
 
+    ##
+    # obtain a list of entries that belong to this trial
+    #
+    # returns an unsorted list of entries inside this trial.
+    def getEntries(self):
+        ret = []
+        if self.lgaze:
+            ret += self.lgaze
+        if self.rgaze:
+            ret += self.rgaze
+        if self.lfix:
+            ret += self.lfix
+        if self.rfix:
+            ret += self.rfix
+        if self.avgfix:
+            ret += self.avgfix
+        if self.loglfix:
+            ret += self.loglfix
+        if self.logrfix:
+            ret += self.logrfix
+        if self.logavgfix:
+            ret += self.logavgfix
+        if self.lsac:
+            ret += self.lsac
+        if self.rsac:
+            ret += self.rsac
+        if self.avgsac:
+            ret += self.avgsac
+        if self.loglsac:
+            ret += self.loglsac
+        if self.logrsac:
+            ret += self.logrsac
+        if self.logavgsac:
+            ret += self.logavgsac
+        ret += self.meta
+        return ret
+
 ##
 # EyeExperiment contains all the EyeTrial of one experiment
 #
@@ -241,30 +293,41 @@ class EyeExperiment(object):
         havestart = False
         foundsync = False
         trial = None
+        tempmeta = []
         for i in entries:
-            if (havestart == False):
+            if havestart == False:
                 if self._isTrialBegin(i):
                     havestart = True
                 else:
                     if i.getEntryType() == LogEntry.MESSAGE:
                         self.meta.append(i)
+                    continue
             if self._isTrialBegin(i):
                 trial = EyeTrial()
             if self._isTrialEnd(i):
                 if trial == None:
                     raise RuntimeError("Encountered trialend without trialbeg")
+                trial.addMeta(i)
                 self.trials.append(trial)
                 trial = None
                 foundsync = False
+                continue
             if self._isPla(i):
                 if trial == None:
                     raise RuntimeError("Encountered pla without trialbeg")
                 trial.setStimulus(i.message.split()[1])
             if self._isSync(i):
-                #FIXME check how sync works exactly.
                 foundsync = True
             if trial and self._isTrialEntry(i) and foundsync :
                 trial.addEntry(i)
+            else:
+                if not trial:
+                    tempmeta.append(i)
+                else:
+                    for m in tempmeta:
+                        trial.addMeta(m)
+                    tempmeta = []
+                    trial.addMeta(i)
 
         for t in self.trials:
             #if t.isMonocular():
@@ -297,8 +360,6 @@ class EyeExperiment(object):
     #
     # \return a string that Fixation likes as input filename
     def getFixationName(self):
-        '''
-        '''
         exp_name    = ""
         subject_num = 0
         list_name   = 0 
@@ -333,4 +394,15 @@ class EyeExperiment(object):
                                                        block_name,
                                                        subject_num)
         return retval
+    
+    ##
+    # Returns a list of events in the trial.
+    #
+    # \returns a list of logentries of an experiment, the events are not sorted.
+    def getEntries(self):
+        ret = []
+        ret += self.meta
+        for trial in self.trials:
+            ret += trial.getEntries()
+        return ret
 

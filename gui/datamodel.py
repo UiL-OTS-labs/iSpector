@@ -14,7 +14,8 @@ from log.eyelog import LogEntry
 from log.parseeyefile import parseEyeFile
 from log.eyeexperiment import EyeExperiment 
 from log.eyedata import EyeData
-import savedialog
+from log import eyelog
+from os import path
 
 ##
 # DataModel helps listing the files in a ordely manner.
@@ -295,6 +296,11 @@ class ExamineDataModel(DataModel):
 # save those edits when neccessary.
 #
 class EditDataModel (DataModel):
+    
+    ## operation succeeded
+    OK          = 0
+    ## filename already exists
+    FN_EXISTS   = 1
 
     ## The eyedata takes a number of files. And a reference to the mainwindow.
     #
@@ -380,12 +386,26 @@ class EditDataModel (DataModel):
     # original file.
     #
     # \param fn the filename to save the experiment to
-    def saveExperiment(self, fn):
+    # \param overwrite if True and the file exists, overwrite it.
+    #
+    # \returns EditDataModel.OK or EditDataModel.FN_EXISTS
+    def saveExperiment(self, fn, overwrite=False):
         # make sure the last edits are saved to the current trial
         if self.isEditted():
             self.addTrialToCurrentExperiment()
-        raise RuntimeError("Implement this function")
 
+        if path.exists(fn) and not overwrite:
+            return self.FN_EXISTS
+
+        entries = self._current_experiment.getEntries()
+        eyelog.saveForFixation(entries, fn)
+
+        # store the name of the saved experiment instead of the opened experiment.
+        ## TODO examine whether it is feasible to update the main window as well.
+        self.files[self.fileindex] = str(fn)
+
+        return self.OK
+        
     
     ##
     # add Edits from the current experiment to the trial inside
@@ -614,9 +634,13 @@ class EditDataController (ExamineDataController):
     ##
     # Save the experiment.
     #
-    # \param fn the filename for the new experiment.
-    def saveExperiment(self, fn):
-        self.model.saveExperiment(fn)
+    # \param fn         string with the filename for the new experiment.
+    # \param overwrite  boolean specify whether the file should be overwritten
+    # 
+    # \returns gui.EditDataModel.OK if written or gui.EditDataModel.FN_EXISTS
+    #          if overwrite is false and the file exists.
+    def saveExperiment(self, fn, overwrite=False):
+        return self.model.saveExperiment(fn, overwrite)
     
     ##
     # Reloads the model with the current setting from the main window.
@@ -639,20 +663,6 @@ class EditDataController (ExamineDataController):
     def setFileIndex(self, n):
         if self.model.fileindex == n:
             return
-        if self.model.isExperimentModified():
-            dlg = savedialog.SaveDialog()
-            ret = dlg.exec_()
-
-            if      ret == dlg.Cancel:
-                return
-            elif    ret == dlg.Save:
-                # Start filechooser first
-                self.model.saveExperiment()
-            elif    ret == dlg.Discard:
-                pass
-            else:
-                raise RuntimeError("Save dialog returned unexpected value")
-            
         super(EditDataController, self).setFileIndex(n)
 
     ##

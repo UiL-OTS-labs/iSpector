@@ -762,40 +762,6 @@ class FixationUpdateCanvas(stimuluswidget.StimulusWidget, dataview.CustomDataVie
                 painter.drawLine(p1, p2)
             painter.restore()
 
-    ##
-    # handles Keypresses
-    #
-    # Currently the widget accepts:
-    # # Ctrl+z  Undos edit
-    # # Ctrl+r  redo edit
-    # # Ctrl+y  redo edit
-    # # Ctrl+a  select all (visible) fixations
-    # # Ctrl+s  save experiment
-    def keyPressEvent(self, event):
-        handled = False
-        if event.modifiers() == QtCore.Qt.ControlModifier:
-            handled = True
-            if event.key() == QtCore.Qt.Key_Z:
-                self.controller.undoEdit()
-            elif event.key() == QtCore.Qt.Key_R or event.key() == QtCore.Qt.Key_Y:
-                self.controller.redoEdit()
-            elif event.key() == QtCore.Qt.Key_A:
-                self.controller.selectAll()
-            elif event.key() == QtCore.Qt.Key_S:
-                self.controller.saveExperiment()
-            else:
-                handled = False
-        elif event.modifiers() == QtCore.Qt.NoModifier:
-            handled = True
-            if event.key() == QtCore.Qt.Key_F5:
-                handled == True ## we just want to update from the model
-            else:
-                handled = False
-        if handled:
-            self.updateFromModel()
-        else:
-            super(FixationUpdateCanvas, self).keyPressEvent(event)
-        
 
     ##
     # Handles mouse press event
@@ -864,3 +830,24 @@ class FixationEditView(dataview.EditDataView):
     def initCustomWidget(self):
         ## The custom widget a gui.FixationUpdateCanvas
         self.custom_widget = FixationUpdateCanvas(self.MODEL, self.controller)
+    
+    ##
+    # handles Keypresses
+    #
+    # Currently the widget accepts:
+    # # Ctrl+a  select all (visible) fixations
+    # # all other options in dataview.EditDataView
+    def keyPressEvent(self, event):
+        handled = False
+        if event.modifiers() == QtCore.Qt.ControlModifier:
+            handled = True
+            if event.key() == QtCore.Qt.Key_A:
+                self.controller.selectAll()
+            else:
+                handled = False
+        
+        if handled:
+            self.updateFromModel()
+        else:
+            super(FixationEditView, self).keyPressEvent(event)
+        

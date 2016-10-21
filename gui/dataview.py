@@ -235,13 +235,13 @@ class EditDataView(DataView):
         ## \todo create a custom filedialog for loading and saving files.
         cur = self.MODEL.getCurrentFileName()
         Dir = os.path.dirname(cur)
-        fn= QtGui.QFileDialog.getSaveFileName(caption          = "Select input file(s)",
+        fn= QtGui.QFileDialog.getSaveFileName(caption          = "Select or enter savefile name.",
                                               directory        = Dir,
                                               filter           = "EyeData (*.csv *.asc);;all (*)",
                                               selectedFilter   = "EyeData"
                                               )
         if fn:
-            self.controller.saveExperiment(fn)
+            self.controller.saveExperiment(fn, True)
  
     ##
     # Determine whether we must save the current experiment.
@@ -255,6 +255,8 @@ class EditDataView(DataView):
     # closing of the window or going to the next trial
     def determineSaveExperiment(self):
         if self.MODEL.isExperimentModified() or self.MODEL.isTrialModified():
+            import pdb
+            pdb.set_trace()
             dlg = savedialog.SaveDialog()
             ret = dlg.exec_()
             if      ret == dlg.Save:
@@ -281,10 +283,10 @@ class EditDataView(DataView):
     def prevTrial(self):
         if self.MODEL.getTrialIndex() == 0:
             if self.determineSaveExperiment():
-                return super(EditDataView, self).nextTrial()
+                return super(EditDataView, self).prevTrial()
             else:
                 return
-        return super(EditDataView, self).nextTrial()
+        return super(EditDataView, self).prevTrial()
 
     ##
     # Determines whether the experiment must be saved, and whether
@@ -295,4 +297,35 @@ class EditDataView(DataView):
         else:
             event.ignore();
 
-            
+    ##
+    # handles Keypresses
+    #
+    # Currently the widget accepts:
+    # # Ctrl+z  Undos edit
+    # # Ctrl+r  redo edit
+    # # Ctrl+y  redo edit
+    # # Ctrl+a  select all (visible) fixations
+    # # Ctrl+s  save experiment
+    def keyPressEvent(self, event):
+        handled = False
+        if event.modifiers() == QtCore.Qt.ControlModifier:
+            handled = True
+            if event.key() == QtCore.Qt.Key_Z:
+                self.controller.undoEdit()
+            elif event.key() == QtCore.Qt.Key_R or event.key() == QtCore.Qt.Key_Y:
+                self.controller.redoEdit()
+            elif event.key() == QtCore.Qt.Key_S:
+                self.determineSaveExperiment()
+            else:
+                handled = False
+        elif event.modifiers() == QtCore.Qt.NoModifier:
+            handled = True
+            if event.key() == QtCore.Qt.Key_F5:
+                handled == True ## we just want to update from the model
+            else:
+                handled = False
+        if handled:
+            self.updateFromModel()
+        else:
+            super(EditDataView, self).keyPressEvent(event)
+
