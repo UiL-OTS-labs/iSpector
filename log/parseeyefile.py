@@ -1,46 +1,81 @@
 #!/usr/bin/env python
 
+##
+# \file parseeyefile.py
+# Contains functions to load eyefiles from disk.
+#
+# \package log
+#
+
 import re
 from eyelog import *
 import gui.statusmessage as sm 
 
+##
+# Turns a list of words into a LogEntry
+#
+# @param splitline a list of the words of one single line in a log file of the
+# csv format
+#
+# \return LogEntry
 def getLogEntry(splitline):
     n = int(splitline[0])
     l = splitline
     entry = None
 
     if n == LogEntry.LGAZE or n == LogEntry.RGAZE:
+        if len(splitline) != 5:
+            raise ValueError("Gaze entry must contain 5 columns")
         entry = GazeEntry(int(l[0]),
                           float(l[1]),
                           float(l[2]),
                           float(l[3]),
-                          float(l[4]),
-                          float(l[5])
+                          float(l[4])
                           )
     elif n == LogEntry.LFIX or n == LogEntry.RFIX:
-        e, zptime, eyetime, x, y, dur = int(l[0]),\
-                                        float(l[1]),\
-                                        float(l[2]),\
-                                        float(l[3]),\
-                                        float(l[4]),\
-                                        float(l[5])
+        if len(splitline) != 5:
+            raise ValueError("Fixation entry must contain 5 columns")
+        e, eyetime, x, y, dur = int(l[0]),\
+                                float(l[1]),\
+                                float(l[2]),\
+                                float(l[3]),\
+                                float(l[4])
 
-        entry = FixationEntry(e, zptime, eyetime, dur, x, y)
-    
+        entry = FixationEntry(e, eyetime, dur, x, y)
+    elif n == LogEntry.LSAC or n == LogEntry.RSAC:
+        if len(splitline) != 6:
+            raise ValueError("SaccadeEntry must contain 6 columns")
+        e, eyetime, x1, y1, x2, y2, dur = int(l[0]), \
+                                          float(l[1]), \
+                                          float(l[2]), \
+                                          float(l[3]), \
+                                          float(l[4]), \
+                                          float(l[5])
+        entry = SaccadeEntry(e, eyetime, dur, x1, y1, x2, y2)
     elif n == LogEntry.STIMULUS:
         #FIXME
         raise RuntimeError("Implement the stimulus log entry")
     elif n == LogEntry.MESSAGE:
+        if len(splitline) != 3:
+            raise ValueError(
+                    "A message entry should contain an {} a timestamp and "
+                    "a message".format(LogEntry.MESSAGE)
+                    )
         #insert tabs back beyond l[3] and strip end of line chars
-        stripped_string = "\t".join(l[3:]).strip("\r\n")
+        stripped_string = "\t".join(l[2:]).strip("\r\n")
         entry = MessageEntry(float(l[1]),
-                             float(l[2]),
                              stripped_string
                              )
     else:
-        raise ValueError("Line: \"" + LogEntry.SEPARATOR.join(splitline) + "\" is invalid")
+        raise ValueError("Line: \"" + LogEntry.SEPARATOR.join(splitline) +
+                                      "\" is invalid")
     return entry
 
+##
+# read a CsvLog from a list of lines of a csv file.
+#
+# \return a list of all the log entries of the lines
+#
 def extractCsvLog(lines):
     logentries = []
     n = 1 # use this to mark location in file where the error is found
@@ -49,18 +84,24 @@ def extractCsvLog(lines):
             splitline = i.split(LogEntry.SEP);
             logentries.append(getLogEntry(splitline))
         except Exception as e:
-            raise ValueError("unable to parse line {1}: \"{0}\"".format(i, n) + str(e))
+            raise ValueError(
+                    "unable to parse line {1}: \"{0}\"".format(i, n) + str(e)
+                    )
         n+=1
     return logentries
 
+##
+# Read the lines of a EyelinkAscii format.
+# @param a list of lines in a Eyelink asc format.
+# \return a list of log entries.
+#
 def extractAscLog(lines):
     '''
         Examines each line to check whether it has got valid input
-        if so it appends it to the logentries
+        if so it appends it to the log entries
     '''
     logentries = []
     # asclog has no mention of time in zep or the program
-    zeptime = -1.0
     #float between captured in regex group
     cflt = r"([-+]?[0-9]*\.?[0-9]+)"
     # match a message in the log
@@ -70,9 +111,13 @@ def extractAscLog(lines):
         )
     #monosample would also match a duo sample(sample with both eyes, where the first three columns are assumed to be the left eye and the 2nd three columns belong to the right eye
     monosample = re.compile(r"^(\d+)\s+" + cflt + r"\s+" + cflt + r"\s+" + cflt + r".+$")
-    #matches a end fixation, start fixations are ignorred
+    #matches a end fixation, start fixations are ignored
     endfix = re.compile(
         r"^EFIX\s+(R|L)\s+(\d+)\s+(\d+)\s+(\d+)\s+" + cflt + r"\s+" + cflt + r"\s+(\d+).*"
+        )
+
+    endsac = re.compile (
+        r"^ESAC\s+(R|L)\s+(\d+)\s+(\d+)\s+(\d+)\s+" + cflt + r"\s+" + cflt + r"\s+" + cflt + r"\s+" + cflt + r".+$"
         )
     #this regex is used to determine whether monocular data is from the left or the right eye
     sampleformat = re.compile(r"^SAMPLES\s+GAZE\s+(\w+).+$")
@@ -82,7 +127,7 @@ def extractAscLog(lines):
     for i in lines:
         m = msgre.search(i)
         if m:
-            e  = MessageEntry(zeptime, float(m.group(1)), m.group(2))
+            e  = MessageEntry(float(m.group(1)), m.group(2))
             logentries.append(e)
             continue
         m = duosample.search(i)
@@ -96,8 +141,8 @@ def extractAscLog(lines):
                 rx = float(m.group(5))
                 ry = float(m.group(6))
                 rp = float(m.group(7))
-                lgaze = GazeEntry(LogEntry.LGAZE, zeptime, eyetime, lx, ly, lp)
-                rgaze = GazeEntry(LogEntry.RGAZE, zeptime, eyetime, rx, ry, rp)
+                lgaze = GazeEntry(LogEntry.LGAZE, eyetime, lx, ly, lp)
+                rgaze = GazeEntry(LogEntry.RGAZE, eyetime, rx, ry, rp)
                 logentries.append(lgaze)
                 logentries.append(rgaze)
             except ValueError as v:
@@ -121,9 +166,9 @@ def extractAscLog(lines):
             #threat all gazes as left gazes
             gaze = None
             if isleft:
-                gaze = GazeEntry(LogEntry.LGAZE, zeptime, eyetime, lx, ly, lp)
+                gaze = GazeEntry(LogEntry.LGAZE, eyetime, lx, ly, lp)
             else:
-                gaze = GazeEntry(LogEntry.RGAZE, zeptime, eyetime, lx, ly, lp)
+                gaze = GazeEntry(LogEntry.RGAZE, eyetime, lx, ly, lp)
             logentries.append(gaze)
             continue
         m = endfix.search(i)
@@ -137,50 +182,85 @@ def extractAscLog(lines):
             y = float(m.group(6))
             fixentry = None
             if (eyetype == "R"):
-                fixentry = FixationEntry(LogEntry.RFIX, zeptime, fixstart, duration, x, y)
+                fixentry = FixationEntry(LogEntry.RFIX, fixstart, duration, x, y)
             elif (eyetype == "L"):
-                fixentry = FixationEntry(LogEntry.LFIX, zeptime, fixstart, duration, x, y)
+                fixentry = FixationEntry(LogEntry.LFIX, fixstart, duration, x, y)
             else:
                 raise ValueError("Invalid fixation end: " + i)
             logentries.append(fixentry)
             continue
+        m = endsac.search(i)
+        if m:
+            # detected saccade
+            eyetype = m.group(1)
+            sacstart = float(m.group(2))
+            #sacend = m.group(3) not used
+            duration = float(m.group(4))
+            x1 = float(m.group(5))
+            y1 = float(m.group(6))
+            x2 = float(m.group(7))
+            y2 = float(m.group(8))
+            sacentry = None
+            if eyetype == "R":
+                sacentry = SaccadeEntry(LogEntry.RSAC, sacstart, duration, x1, y1, x2, y2)
+            if eyetype == "L":
+                sacentry = SaccadeEntry(LogEntry.LSAC, sacstart, duration, x1, y1, x2, y2)
+            logentries.append(sacentry)
+
     return logentries
 
 
+##
+# Result of parsing a eyemovement file.
+#
+# There can be many problems with parsing a file
+# This class returns the files or error that have
+# occured
+#
 class ParseResult:
 
-    """
-    There can be many problems with parsing a file
-    This class returns the files or error that have
-    occured
-    """
-
+    ##
+    # initialize a empty parseresult
     def __init__(self, entries=[], errors=[]):
-        """ """
+        ## a list of LogEntry
         self.entries = entries
+        ## a list of errors
         self.errors = errors
 
+    ##
+    # after parsing one can add entries with this function
     def setEntries(self, entries):
         self.entries = entries
 
+    ##
+    # returns a list of LogEntry or possibly an empty list.
     def getEntries(self):
         return self.entries
 
+    ##
+    # Set a list of errors to the error list.
+    # list of tuples of (string, StatusMessage.OK or StatusMessage.error or StatusMessage.warning)
     def setErrors(self, errorlist):
         self.errorlist
-
+    
+    ##
+    # appendErrors(to the list)
     def appendError(self, error):
         self.errors.append(error)
-        
+    
+    ##
+    # getErrors should be called when the entries are empty
     def getErrors(self):
         return self.errors
 
-
+##\brief Parses the filename
+#
+# This function first checks whether the file is a valid CsvFile as defined by iSpector
+# if this fails it tries to read the file as an Eyelink ascii format if this fails
+# it will add Parse errors to the parse result, otherwise it will add a list of LogEntry
+# to the ParseResult.
+# \returns ParseResult
 def parseEyeFile(filename):
-    '''
-    Parses the filename
-    returns ParseResult
-    '''
     CsvError = "Unable to parse file '{0}' as .csv file".format(filename)
     AscError = "Unable to parse file '{0}' as .asc file".format(filename)
 

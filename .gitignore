@@ -55,3 +55,9 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Doxygen generated documentation
+doc/
+
+# vim swap files
+*.sw[a-z]

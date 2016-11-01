@@ -1,12 +1,32 @@
 #!/usr/bin/env python
 
+##
+# \file arguments.py
+#
+# In this file handeling of commandline arguments is handled.
+
 import argparse
 import matplotlib
+from gui.ispectorgui import MainGuiModel
 
 PARSER = None
 ARGS   = None
 
 LOGO = "iSpectorLogo.svg"
+
+class TestActionOption(argparse.Action):
+
+    ## message to format message in case of a invalid action.
+    message = "choose one of {0}"
+
+    def __call__(self, parser, namespace, value, option_string=None):
+        valid = MainGuiModel.VALID_ACTIONS
+        if value:
+            if value not in valid:
+                message = TestActionOption.message\
+                           .format(", ".join(valid))
+                raise argparse.ArgumentError(self, message)
+        setattr(namespace, self.dest, value)
 
 def _addArguments(p):
     '''
@@ -38,7 +58,7 @@ def _addArguments(p):
         help='Compares our fixations with the logged ones.'
         )
     
-    p.add_argument('-e', '--extract', action="store_true",
+    p.add_argument('-a', '--action', type=str, default="inspect", action=TestActionOption,
         help='Doesn\'t inspect the file, but detects fixations and saccades and logs those compatible for fixation.'
         )
     p.add_argument('-l', '--extract-left', action="store_true",

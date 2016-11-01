@@ -7,7 +7,8 @@ from log.parseeyefile import *
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 
-import eyeoutputqt
+import inspecteyedataview
+from gui import datamodel
 import statusmessage as sm
 import sys
 import os
@@ -16,6 +17,7 @@ import ievent
 import statusbox
 import utils.configfile
 import iSpectorVersion
+import fixationeditor
 
 
 LOGO = "iSpectorLogo.svg"
@@ -73,13 +75,8 @@ class Controller :
         if self.model[self.model.DIRS][utils.configfile.STIMDIR]:
             self.updateStimDir(self.model[self.model.DIRS][utils.configfile.STIMDIR])
 
-    def updateExtract(self, string):
-        if string == "inspect":
-            self.model[self.model.EXTRACT] = False
-        elif string == "extract":
-            self.model[self.model.EXTRACT] = True
-        else:
-            raise RuntimeError("Invalid string in updateExtract")
+    def updateAction(self, string):
+        self.model[self.model.ACTION] = string
 
     def updateStatus(self, string):
         s = str(string)
@@ -322,7 +319,7 @@ class OptionGroup(QtGui.QGroupBox):
 
     def handleAction(self, index):
         string = self.actioncombo.itemText(index)
-        self.controller.updateExtract(string)
+        self.controller.updateAction(string)
 
     def handleEye(self, index):
         string = self.eyecombo.itemText(index)
@@ -364,7 +361,7 @@ class OptionGroup(QtGui.QGroupBox):
         # A combobox that sets the main action of the program.
         combo = QtGui.QComboBox()
         combo.setToolTip(self.actiontip)
-        combo.addItems(["extract", "inspect"])
+        combo.addItems(MainGuiModel.VALID_ACTIONS)
         combo.activated.connect(self._handle)
         self.grid.addWidget(combo, 0, 1)
         self.actioncombo = combo
@@ -444,10 +441,7 @@ class OptionGroup(QtGui.QGroupBox):
 
     def updateFromModel(self):
         ''' Sets the options combo to the values in the model. '''
-        if self.MODEL[self.MODEL.EXTRACT]:
-            comboSelectString(self.actioncombo, "extract")
-        else :
-            comboSelectString(self.actioncombo, "inspect")
+        comboSelectString(self.actioncombo, self.MODEL[self.MODEL.ACTION])
 
         if ((self.MODEL[self.MODEL.EXTRACT_LEFT] and self.MODEL[self.MODEL.EXTRACT_RIGHT] ) or
             (not self.MODEL[self.MODEL.EXTRACT_LEFT] and not self.MODEL[self.MODEL.EXTRACT_RIGHT])):
@@ -583,41 +577,52 @@ class InputOutput(QtGui.QVBoxLayout) :
             else:
                 item.setSelected(False)
         
+##
+# The main window of iSpector
+#
+# This is the main window. It is essentially no longer a wrapper around the
+# commandline arguments of examine_csv.
+#
+# \note ispector actually started as a terminal program instead of a gui
+#       some things just keep expanding :D!!
 class ISpectorGui(QtGui.QMainWindow):
-    ''' 
-    \brief The main window of iSpector
-
-    This is the main window. It is essentially a wrapper around the
-    commandline arguments of examine_csv.
-    '''
 
     ## window title, can still be improved
-    _WINDOW_TITLE = iSpectorVersion.getVersion() + " (if it starts with eye it \"must\" be good)"
-
+    _WINDOW_TITLE = iSpectorVersion.getVersion() +\
+                    " (if it starts with eye it \"must\" be good)"
+    
+    ##
+    # Construct the main window.
     def __init__(self, model):
         ''' Inits the main window '''
         super(ISpectorGui, self).__init__()
         
+        ## the controller from a MVC gui implementation
         self.controller = Controller(model, self)
+        ## the model from a MVC gui implementation
         self.MODEL      = model
 
         # init Qt related stuff
         self._init()
 
+    ##
+    # Add all gui stuff to the main window.
     def _init(self):
-        # Set Main window appearance.
+        # Set main window appearance.
         self.setWindowTitle(self._WINDOW_TITLE)
         self.setWindowIcon(QtGui.QIcon(LOGO))
 
-        # adding main widget to the window
+        # Adding main widget to the window
         centralwidget = QtGui.QWidget(self)
         self.setCentralWidget(centralwidget)
+        ## a grid to layout all other widgets.
         self.grid = QtGui.QGridLayout()
         self.grid.setColumnStretch(1, 1)
         self.grid.setColumnStretch(0,10)
         centralwidget.setLayout(self.grid)
 
         # Make the options
+        ## a OptionGroup to configure "global" parameters.
         self.options = OptionGroup(self.controller, self.MODEL, self)
         self.options.setFlat(False)
         self.grid.addWidget(self.options, 0, 1)
@@ -627,13 +632,16 @@ class ISpectorGui(QtGui.QMainWindow):
         self.dirs.setFlat(False)
         self.grid.addWidget(self.dirs, 1, 1)
 
+        ## The file selector
         self.files = InputOutput(self.controller, self.MODEL)
         self.grid.addLayout(self.files, 0, 0, 2,1, QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
 
+        ## The action button to start the iSpector action.
         self.actionbutton = QtGui.QPushButton("")
         self.actionbutton.clicked.connect(self.doAction)
         self.grid.addWidget(self.actionbutton, 3, 1, alignment=QtCore.Qt.AlignRight)
 
+        ## The box wherein status messages are displayed.
         self.statusbox = statusbox.StatusBox()
         templayout = QtGui.QVBoxLayout();
         templabel = QtGui.QLabel("Status messages: ")
@@ -654,7 +662,7 @@ class ISpectorGui(QtGui.QMainWindow):
         openAction.setStatusTip('Open file(s)')
         openAction.triggered.connect(self.files._openFiles)
         
-        #add menubar
+        # add menubar
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(exitAction)
@@ -664,7 +672,13 @@ class ISpectorGui(QtGui.QMainWindow):
         self.updateFromModel()
 
         self.show()
-
+    
+    ##
+    # Catch events related check to see whether it is a status event.
+    #
+    # The event event is overwritten to capture custom user events.
+    # for example if a user reports a status
+    #
     def event(self, e):
         if e.type() == ievent.StatusEvent.my_user_event_type:
             status = e.get_status()
@@ -672,40 +686,75 @@ class ISpectorGui(QtGui.QMainWindow):
             return True
         return super(ISpectorGui, self).event(e)
 
+    ##
+    # returns a tuple of data model and the controller
     def getModel(self):
-        ''' returns a tuple of data model and the controller '''
         return self.MODEL, self.controller
 
+    ##
+    # Show a status message in iSpector main gui.
+    #
+    # This function shows a status message in the iSpectorgui.
+    # since it posts an event it should be threadsafe.
+    #
+    # \param status one of StatusMessage.ok, error or warning.
+    # \param message a string with information to display.
     def reportStatus(self, status, message):
         status =  sm.StatusMessage(status, message)
         event = ievent.StatusEvent(status)
         QtGui.QApplication.postEvent(self, event)
 
+    ##
+    # Read the model and update the view.
     def updateFromModel(self):
-        ''' Read the model and update the view '''
         self.statusBar().showMessage(self.MODEL[self.MODEL.STATUS])
         self.options.updateFromModel()
         self.files.updateFromModel()
         self.dirs.updateFromModel()
 
-        actiontxt = ""
-        if self.MODEL[self.MODEL.EXTRACT]:
-            actiontxt = "extract"
-        else:
-            actiontxt = "inspect"
+        actiontxt = self.MODEL[self.MODEL.ACTION]
         self.actionbutton.setText(actiontxt)
 
+    ##
+    # Examines all selected files.
     def examine(self, filelist):
-        ''' Examines all selected files. '''
+        filelist = []
+        if len(self.MODEL[self.MODEL.SELECTED]) > 0:
+            filelist = self.MODEL[self.MODEL.SELECTED]
+        else:
+            filelist = self.MODEL[self.MODEL.FILES]
+        
+        model = datamodel.ExamineDataModel(filelist, self)
+        controller = datamodel.ExamineDataController(model)
+        examinewidget = inspecteyedataview.InspectEyeDataView(model,
+                                                              controller,
+                                                              self
+                                                              )
+        if examinewidget.hasValidData():
+            examinewidget.show()
+        else:
+            self.reportStatus(statusmessage.StatusMessage.error,
+                              "Unable to load valid data for inspection.")
+
+    def editFixations(self, filelist):
         filelist = []
         if len(self.MODEL[self.MODEL.SELECTED]) > 0:
             filelist = self.MODEL[self.MODEL.SELECTED]
         else:
             filelist = self.MODEL[self.MODEL.FILES]
 
-        examinewidget = eyeoutputqt.ExamineEyeDataWidget(filelist, self)
-        if examinewidget.hasValidData():
-            examinewidget.show()
+        model           = fixationeditor.FixationEditModel(filelist,
+                                                           self,
+                                                           fixationeditor.SHOW_ALL
+                                                           )
+        controller      = fixationeditor.FixationEditController(model)
+        fix_edit_widget = fixationeditor.FixationEditView(model, controller, self)
+        if fix_edit_widget.hasValidData():
+            fix_edit_widget.show()
+        else:
+            self.reportStatus(statusmessage.StatusMessage.error,
+                              "Unable to load valid data for inspection.")
+        
 
     def _createOutputFilename(self, experiment, fname, outdir):
         ''' Create a suitable output absolute pathname
@@ -820,17 +869,20 @@ class ISpectorGui(QtGui.QMainWindow):
         if not files:
             return
 
-        if self.MODEL[self.MODEL.EXTRACT]:
+        if self.MODEL[self.MODEL.ACTION] == self.MODEL.EXTRACT:
             dirs = self.MODEL[self.MODEL.DIRS]
             d = dirs[utils.configfile.OUTPUTDIR]
             self.extractForFixation(files, d)
-        else:
+        elif self.MODEL[self.MODEL.ACTION] == self.MODEL.INSPECT:
             self.examine(files)
+        elif self.MODEL[self.MODEL.ACTION] == self.MODEL.EDIT_FIXATIONS:
+            self.editFixations(files)
+        else:
+            raise RuntimeError("Invalid key in self.MODEL[self.MODEL.ACTION]")
 
+    ##
+    # Save config file and exit
     def closeEvent(self, event):
-        '''
-        Save config file and exit
-        '''
         self.MODEL.configfile.write()
         super(ISpectorGui, self).closeEvent(event)
 
@@ -841,20 +893,34 @@ class MainGuiModel(dict):
     The model of the parameters of iSpector
     '''
 
-    SMOOTH          = "smooth"          ## bool
-    SMOOTHWIN       = "smoothwin"       ## int
-    SMOOTHORDER     = "smoothorder"     ## int
-    THRESHOLD       = "threshold"       ## string
-    NTHRESHOLD      = "nthreshold"      ## float
-    DRAWSACCADES    = "drawsaccades"    ## bool
-    COMPARE         = "compare"         ## bool
-    EXTRACT         = "extract"         ## bool
-    EXTRACT_LEFT    = "extract-left"    ## bool
-    EXTRACT_RIGHT   = "extract-right"   ## bool
-    DIRS            = "dirs"            ## dict
-    FILES           = "files"           ## list[string]
-    SELECTED        = "selected"        ## list[string]
-    STATUS          = "status"          ## string
+    SMOOTH          = "smooth"          ##<bool
+    SMOOTHWIN       = "smoothwin"       ##<int
+    SMOOTHORDER     = "smoothorder"     ##<int
+    THRESHOLD       = "threshold"       ##<string
+    NTHRESHOLD      = "nthreshold"      ##<float
+    DRAWSACCADES    = "drawsaccades"    ##<bool
+    COMPARE         = "compare"         ##<bool
+    ACTION          = "action"          ##<string
+    EXTRACT_LEFT    = "extract-left"    ##<bool
+    EXTRACT_RIGHT   = "extract-right"   ##<bool
+    DIRS            = "dirs"            ##<dict
+    FILES           = "files"           ##<list[string]
+    SELECTED        = "selected"        ##<list[string]
+    STATUS          = "status"          ##<string
+
+    # strings releated to a certain action
+
+    ## string used for inspecting
+    INSPECT         = "inspect"
+    ## string used for extracting
+    EXTRACT         = "extract"
+    ## string used for edit fixation action 
+    EDIT_FIXATIONS  = "edit fixations"
+    ## a list of strings with valid actions that iSpector can do.
+    VALID_ACTIONS   = [ INSPECT,
+                        EXTRACT,
+                        EDIT_FIXATIONS
+                        ]
 
     def __init__ (self, cmdargs):
         ''' 
@@ -879,7 +945,7 @@ class MainGuiModel(dict):
         self[self.NTHRESHOLD]    = cmdargs.nthres
         self[self.DRAWSACCADES]  = cmdargs.draw_saccades
         self[self.COMPARE]       = cmdargs.compare
-        self[self.EXTRACT]       = cmdargs.extract
+        self[self.ACTION]        = cmdargs.action
         self[self.EXTRACT_LEFT]  = cmdargs.extract_left
         self[self.EXTRACT_RIGHT] = cmdargs.extract_right
         self[self.FILES]         = cmdargs.files
