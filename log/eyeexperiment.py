@@ -80,6 +80,10 @@ class EyeTrial(object):
             self.loglfix.append(entry)
         elif n == LogEntry.RFIX:
             self.logrfix.append(entry)
+        elif n == LogEntry.LSAC:
+            self.loglsac.append(entry)
+        elif n == LogEntry.RSAC:
+            self.logrsac.append(entry)
         else:
             raise ValueError("Invalid type of logentry added to EyeTrial.")
     
@@ -270,10 +274,12 @@ class EyeExperiment(object):
     #
     def _isTrialEntry(self, entry):
         n = entry.getEntryType()
-        if ( n == LogEntry.RGAZE or
-             n == LogEntry.LGAZE or
-             n == LogEntry.RFIX  or
-             n == LogEntry.LFIX) :
+        if ( n == LogEntry.RGAZE   or
+             n == LogEntry.LGAZE   or
+             n == LogEntry.RFIX    or
+             n == LogEntry.LFIX    or
+             n == LogEntry.RSAC    or
+             n == LogEntry.LSAC):
             return True
         return False
 

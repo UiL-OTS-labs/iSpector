@@ -4,7 +4,7 @@
 # \file fixationeditor.py
 #
 # this file is created to help edit fixations.
-# The fixations in this editor are editted in space.
+# The fixations in this editor are edited in space.
 #
 # \todo make it possible to edit fixations in space.
 #
@@ -151,12 +151,12 @@ class FixationDataEdit(object):
     
 
 ##
-# A controller for the editting of fixations.
+# A controller for the editing of fixations.
 #
 class FixationEditController(datamodel.EditDataController):
     
     ##
-    #  init a FixationEditController
+    #  Init a FixationEditController
     #
     def __init__(self, model):
         super(FixationEditController, self).__init__(model)
@@ -324,14 +324,14 @@ class FixationEditController(datamodel.EditDataController):
 class FixationEditModel(datamodel.EditDataModel):
     
     ##
-    # init a FixationEditModel
+    # Init a FixationEditModel
     #
     # \param files [in]     A list of files.
     # \param mainwin [in]   The iSpector main window.
     # \param show_eye [in]  An integer which bits specify which eyes to show.
     def __init__(self, files, mainwin, show_eye=SHOW_ALL):
         super(FixationEditModel, self).__init__(files, mainwin)
-        ## an integer wich bits dictate which eye should be selected
+        ## an integer which bits dictate which eye should be selected
         self._show_eye = show_eye
         ## a list with references to the selected fixations
         self._selected = []
@@ -346,9 +346,9 @@ class FixationEditModel(datamodel.EditDataModel):
         ## The pixmap of the current stimulus.
         self._pixmap = None
 
-        ## The transparancy of the fixations
+        ## The transparency of the fixations
         self.fixalpha = 50
-        ## The transparancy of the selection marker
+        ## The transparency of the selection marker
         self.selalpha = 80
 
     ##
@@ -390,7 +390,7 @@ class FixationEditModel(datamodel.EditDataModel):
         self._selected = []
 
     ##
-    # Sets the vector wich indicates the distance the fixations should
+    # Sets the vector which indicates the distance the fixations should
     # be translated
     def setVector(self, vector):
         self._vector = vector
@@ -401,7 +401,7 @@ class FixationEditModel(datamodel.EditDataModel):
         return self._vector
 
     ##
-    # Aditionally to what onNewTrial normally does it also loads the stimulus.
+    # Additionally to what onNewTrial normally does it also loads the stimulus.
     # and since a new trial means new data we clear the selection
     def onNewTrial(self):
         super(FixationEditModel, self).onNewTrial()
@@ -411,7 +411,7 @@ class FixationEditModel(datamodel.EditDataModel):
         MM = self.getMainWindow().getModel()[0]
         stimdir = MM[MM.DIRS][utils.configfile.STIMDIR]
         abspath = path.join(stimdir, fn)
-        
+
         # load relative to stimulus directory.
         if path.exists(abspath):
             self._pixmap = QtGui.QPixmap(abspath)
@@ -473,38 +473,30 @@ class FixationEditModel(datamodel.EditDataModel):
     # The input fixations are strung together. Thereby a list of saccades
     # is generated. The Saccades will be formed by taking
     #
-    # \param [in] fixations a iterable with fixatons
+    # \param [in] fixations a list with fixations
     # \return     a list with saccades or an empty list if there are not enough
     #             fixations.
     @staticmethod
     def connectFixations(fixations):
         saccades = []
-        try:
-            firstit = iter(fixations)
-            first = firstit.next()
-            # iterate over all fixations until StopIteration is raised by firstit
-            # and combine the fixations first and second to one saccade.
-            while 1:
-                second  = firstit.next()
+        for i in range(1, len(fixations)):
+            first = fixations[i - 1]
+            second= fixations[i]
 
-                start   = first.getEyeTime() + first.duration
-                end     = second.getEyeTime()
-                x1, y1  = first.x, first.y
-                x2, y2  = second.x, second.y
-                et      = first.getEntryType()
-                if et == LogEntry.LFIX:
-                    et = LogEntry.LSAC
-                elif et == LogEntry.RFIX:
-                    et = LogEntry.RSAC
-                else:
-                    et = LogEntry.AVGSAC
-                sac = SaccadeEntry(et, -1, start, end, x1, y1, x2, y2)
-                saccades.append(sac)
+            start   = first.getEyeTime() + first.duration
+            end     = second.getEyeTime()
+            x1, y1  = first.x, first.y
+            x2, y2  = second.x, second.y
+            et      = first.getEntryType()
+            if et == LogEntry.LFIX:
+                et = LogEntry.LSAC
+            elif et == LogEntry.RFIX:
+                et = LogEntry.RSAC
+            else:
+                et = LogEntry.AVGSAC
 
-                first = second
+            saccades.append(SaccadeEntry(et, start, end-start, x1, y1, x2, y2))
 
-        except StopIteration:
-            pass
         return saccades
 
     ##
@@ -538,8 +530,8 @@ class FixationEditModel(datamodel.EditDataModel):
     # adds the current trial to the current experiment if there is a difference
     #
     # If edits were made to the current trial merge it with the current
-    # experiment. In practise this means that we replace the fixation and
-    # saccades for each eye with the saccades in de current edit.
+    # experiment. In practice this means that we replace the fixation and
+    # saccades for each eye with the saccades in the current edit.
     def addTrialToCurrentExperiment(self):
         data            = self.getCurrentEdit()
         curtrial        = self.getCurrentTrial()
@@ -553,7 +545,7 @@ class FixationEditModel(datamodel.EditDataModel):
         self._current_experiment.trials[self.trialindex] = curtrial
 
     ##
-    # Tells wich fixations should be visible on the screen
+    # Tells which fixations should be visible on the screen
     #
     # \returns a list with those fixations or an empty list.
     def getVisible(self):
@@ -595,7 +587,7 @@ class FixationEditModel(datamodel.EditDataModel):
             edit.rsac = self.connectFixations(edit.rfix)
         if edit.avgfix:
             edit.avgsac = self.connectFixations(edit.avgfix)
-
+        
         self.pushEdit(edit)
             
     ##
@@ -671,7 +663,7 @@ class FixationUpdateCanvas(stimuluswidget.StimulusWidget, dataview.CustomDataVie
 
         edit    = self.MODEL.getCurrentEdit()
         
-        # enable antialiasing of paths.
+        # enable anti aliasing of paths.
         painter.setRenderHint(painter.Antialiasing)
         if edit:
             if self.MODEL.showLeft():
@@ -694,7 +686,7 @@ class FixationUpdateCanvas(stimuluswidget.StimulusWidget, dataview.CustomDataVie
             #print self.onCustomPaint, "No edit"
     
     ##
-    # Draws the cirles and the letters for the fixations.
+    # Draws the circles and the letters for the fixations.
     def _paintFixations(self, painter, fixations, fill, line, draw_letter=False):
         n = 0
         RADIUS = min(self.height(), self.width()) / 50 
@@ -707,7 +699,7 @@ class FixationUpdateCanvas(stimuluswidget.StimulusWidget, dataview.CustomDataVie
                 self._writeFixation(painter, x, y, n, i.duration)
 
     ##
-    # paintes the circles of the fixations.
+    # Paints the circles of the fixations.
     def _paintDot(self, painter, x, y, radius, fill, line):
         painter.save()
         painter.translate(x,y)

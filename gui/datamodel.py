@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 ##
-# \file datamodel.py This file contains the data models and controllers of Fixation.
+# \file datamodel.py This file contains the data models and controllers of iSpector.
 # 
 # This is the file that contains the Controllers and Models from a 
 # Model View Controller design.
@@ -179,7 +179,7 @@ class DataModel(object):
     # onFileLoaded is called when a new file has been loaded.
     #
     # onFileLoaded does nothing in the current class, but it should be overload
-    # in child classes, because they might want to update there model when a
+    # in child classes, because they might want to update their model when a
     # new file is loaded.
     def onFileLoaded(self):
         raise NotImplementedError()
@@ -288,18 +288,18 @@ class ExamineDataModel(DataModel):
 
 
 ##
-# This data model contains everything to examine a/multiple eyemovement files.
+# This data model contains everything to examine a/multiple eye movement files.
 # 
 # This data model is more expensive than the default ExamineDataModel, however
 # it is more capable to edit the data in the experiments or files.
 # This way it is possible to maintain some edits and
-# save those edits when neccessary.
+# save those edits when necessary.
 #
 class EditDataModel (DataModel):
     
     ## operation succeeded
     OK          = 0
-    ## filename already exists
+    ## file name already exists
     FN_EXISTS   = 1
 
     ## The eyedata takes a number of files. And a reference to the mainwindow.
@@ -372,6 +372,7 @@ class EditDataModel (DataModel):
     # Once the current trial is loaded there must be one edit
     #
     # \note Must be implemented in derived class
+    # \abstract
     def _pushInitialEdit(self):
         msg = "_pushInitialEdit must be implemented in derived class"
         raise NotImplementedError(msg)
@@ -380,12 +381,12 @@ class EditDataModel (DataModel):
     # Save the experiment
     #
     # If edits are made we save the experiment. We also
-    # swap the name in the list of files with the new filename. Then
+    # swap the name in the list of files with the new file name. Then
     # if someone sets the file index back to the currently
-    # editted file, they will see the updated file and not the 
+    # edited file, they will see the updated file and not the 
     # original file.
     #
-    # \param fn the filename to save the experiment to
+    # \param fn the file name to save the experiment to
     # \param overwrite if True and the file exists, overwrite it.
     #
     # \returns EditDataModel.OK or EditDataModel.FN_EXISTS
@@ -414,6 +415,8 @@ class EditDataModel (DataModel):
     # The edits are merged into the current experiment. What the current
     # edits are is specific to a Derived class, therefore the method
     # must be implemented there.
+    #
+    # \abstract
     def addTrialToCurrentExperiment(self):
         raise NotImplementedError(
             "addTrialToCurrentExperiment must be called from derived class only"
@@ -484,7 +487,6 @@ class EditDataModel (DataModel):
     #
     # \param n a valid positive index < len(self.files)
     def setFileIndex(self, n):
-        print self, "setFileIndex", self.fileindex, " to ", n
         if n == self.fileindex:
             return
 

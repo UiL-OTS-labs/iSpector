@@ -251,12 +251,12 @@ class EditDataView(DataView):
     # whether we should advance to the next trial or allow closing
     # of the view.
     #
-    # \returns True if we should advance or False if the user cancelled the
+    # \returns True if we should advance or False if the user canceled the
     # closing of the window or going to the next trial
     def determineSaveExperiment(self):
         if self.MODEL.isExperimentModified() or self.MODEL.isTrialModified():
-            import pdb
-            pdb.set_trace()
+            #import pdb
+            #pdb.set_trace()
             dlg = savedialog.SaveDialog()
             ret = dlg.exec_()
             if      ret == dlg.Save:

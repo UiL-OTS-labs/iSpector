@@ -14,7 +14,7 @@ import gui.statusmessage as sm
 ##
 # Turns a list of words into a LogEntry
 #
-# @param splitline a list of the words of one single line in a logfile of the
+# @param splitline a list of the words of one single line in a log file of the
 # csv format
 #
 # \return LogEntry
@@ -24,6 +24,8 @@ def getLogEntry(splitline):
     entry = None
 
     if n == LogEntry.LGAZE or n == LogEntry.RGAZE:
+        if len(splitline) != 5:
+            raise ValueError("Gaze entry must contain 5 columns")
         entry = GazeEntry(int(l[0]),
                           float(l[1]),
                           float(l[2]),
@@ -31,6 +33,8 @@ def getLogEntry(splitline):
                           float(l[4])
                           )
     elif n == LogEntry.LFIX or n == LogEntry.RFIX:
+        if len(splitline) != 5:
+            raise ValueError("Fixation entry must contain 5 columns")
         e, eyetime, x, y, dur = int(l[0]),\
                                 float(l[1]),\
                                 float(l[2]),\
@@ -38,11 +42,25 @@ def getLogEntry(splitline):
                                 float(l[4])
 
         entry = FixationEntry(e, eyetime, dur, x, y)
-    
+    elif n == LogEntry.LSAC or n == LogEntry.RSAC:
+        if len(splitline) != 6:
+            raise ValueError("SaccadeEntry must contain 6 columns")
+        e, eyetime, x1, y1, x2, y2, dur = int(l[0]), \
+                                          float(l[1]), \
+                                          float(l[2]), \
+                                          float(l[3]), \
+                                          float(l[4]), \
+                                          float(l[5])
+        entry = SaccadeEntry(e, eyetime, dur, x1, y1, x2, y2)
     elif n == LogEntry.STIMULUS:
         #FIXME
         raise RuntimeError("Implement the stimulus log entry")
     elif n == LogEntry.MESSAGE:
+        if len(splitline) != 3:
+            raise ValueError(
+                    "A message entry should contain an {} a timestamp and "
+                    "a message".format(LogEntry.MESSAGE)
+                    )
         #insert tabs back beyond l[3] and strip end of line chars
         stripped_string = "\t".join(l[2:]).strip("\r\n")
         entry = MessageEntry(float(l[1]),
@@ -56,7 +74,7 @@ def getLogEntry(splitline):
 ##
 # read a CsvLog from a list of lines of a csv file.
 #
-# \return a list of all the logentries of the lines
+# \return a list of all the log entries of the lines
 #
 def extractCsvLog(lines):
     logentries = []
@@ -75,7 +93,7 @@ def extractCsvLog(lines):
 ##
 # Read the lines of a EyelinkAscii format.
 # @param a list of lines in a Eyelink asc format.
-# \return a list of logentries.
+# \return a list of log entries.
 #
 def extractAscLog(lines):
     '''
@@ -96,6 +114,10 @@ def extractAscLog(lines):
     #matches a end fixation, start fixations are ignored
     endfix = re.compile(
         r"^EFIX\s+(R|L)\s+(\d+)\s+(\d+)\s+(\d+)\s+" + cflt + r"\s+" + cflt + r"\s+(\d+).*"
+        )
+
+    endsac = re.compile (
+        r"^ESAC\s+(R|L)\s+(\d+)\s+(\d+)\s+(\d+)\s+" + cflt + r"\s+" + cflt + r"\s+" + cflt + r"\s+" + cflt + r".+$"
         )
     #this regex is used to determine whether monocular data is from the left or the right eye
     sampleformat = re.compile(r"^SAMPLES\s+GAZE\s+(\w+).+$")
@@ -167,6 +189,24 @@ def extractAscLog(lines):
                 raise ValueError("Invalid fixation end: " + i)
             logentries.append(fixentry)
             continue
+        m = endsac.search(i)
+        if m:
+            # detected saccade
+            eyetype = m.group(1)
+            sacstart = float(m.group(2))
+            #sacend = m.group(3) not used
+            duration = float(m.group(4))
+            x1 = float(m.group(5))
+            y1 = float(m.group(6))
+            x2 = float(m.group(7))
+            y2 = float(m.group(8))
+            sacentry = None
+            if eyetype == "R":
+                sacentry = SaccadeEntry(LogEntry.RSAC, sacstart, duration, x1, y1, x2, y2)
+            if eyetype == "L":
+                sacentry = SaccadeEntry(LogEntry.LSAC, sacstart, duration, x1, y1, x2, y2)
+            logentries.append(sacentry)
+
     return logentries
 
 

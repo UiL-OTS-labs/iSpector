@@ -59,9 +59,8 @@ class LogEntry (object):
     ## Construct an instance of LogEntry
     #
     # @param entrytype defines what kind of log entry this is.
-    # @param zeptime The time event in zep when a stimulus occures. (deprecated)
     # @param eyetime A float that marks the time in the time of the eyetracker.
-    def __init__(self, entrytype, zeptime, eyetime):
+    def __init__(self, entrytype, eyetime):
         ## The type of entry of this LogEntry
         self.entrytype  = entrytype
         self.eyetime    = eyetime
@@ -77,11 +76,6 @@ class LogEntry (object):
     ## Compares for object difference 
     def __ne__(self, other):
         return not self == other
-
-    ## Tell the time in a Zep experiment when this log event occured.
-    # \deprecated
-    def getZepTime(self):
-        return  self.zeptime
 
     ## This marks the timepoint in milliseconds when 
     def getEyeTime(self):
@@ -185,7 +179,6 @@ class GazeEntry(LogEntry) :
     # construct a GazeEntry
     #
     # \param entrytype LogEntry.RGAZE or LogEntry.LGaze
-    # \param zeptime deprecated and not used
     # \param eyetime the time on the eyetracker when the gaze was sampled
     # \param x float of the x-coordinate of the gaze
     # \param y float of the y-coordinate of the gaze
@@ -220,7 +213,7 @@ class AscGazeEntry(LogEntry):
         else:
             raise ValueError("Both lgaze and rgaze are not valid")
 
-        super(AscGazeEntry, self).__init__(LogEntry.ASCGAZE, time, time)
+        super(AscGazeEntry, self).__init__(LogEntry.ASCGAZE, time)
 
         ## contains a GazeEntry for the left eye.
         self.lgaze = lgaze

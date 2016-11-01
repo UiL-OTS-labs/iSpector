@@ -24,7 +24,15 @@ import utils.configfile
 from PyQt4 import QtGui, QtCore
 
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationBar
+# Apparently NavigationToolbar2QTAgg is renamed in newer versions 
+# so much for backward compatibility...
+try :
+    from matplotlib.backends.backend_qt4agg import\
+            NavigationToolbar2QTAgg as NavigationBar
+except ImportError as e:
+    from matplotlib.backends.backend_qt4agg import\
+            NavigationToolbar2QT as NavigationBar
+
 from matplotlib.figure import Figure
 
 #
@@ -240,10 +248,10 @@ class GazePlotWidget(FigureCanvas):
             self.axgaze.imshow(img, zorder=0, interpolation='nearest')
             #self.figure.figaspect(img.size)
         
-        if lx != None and ly != None:
+        if not lx is None and not ly is None:
             self.axgaze.plot(lx, ly, _leftl, zorder=1)
             self.axgaze.hold(True)
-        if rx != None and ry != None:
+        if not rx is None and not ry is None:
             self.axgaze.plot(rx, ry, _rightl, zorder=1)
             self.axgaze.hold(True)
 
