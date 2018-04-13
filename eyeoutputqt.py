@@ -18,7 +18,13 @@ from PyQt4 import QtGui, QtCore
 
 #import matplotlib.cbook as cbook
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationBar
+
+# Work around for backward incompatibility issue from matplotlib.
+try:
+    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationBar
+except ImportError:
+    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationBar
+    
 from matplotlib.figure import Figure
 
 #
