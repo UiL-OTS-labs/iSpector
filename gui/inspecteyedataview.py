@@ -38,17 +38,17 @@ from matplotlib.figure import Figure
 #
 # line types used throughout this module
 #
-_leftl      = 'b-' #:lefteye
-_rightl     = 'r-' #:righteye
+_leftl      = 'b-'  #:lefteye
+_rightl     = 'r-'  #:righteye
 _thresholdl = 'm--' #:threshold line
-_smoothl    = 'g-' #:smoothed line
-_startf     = 'ro' #:start fix line type
-_endf       = 'go' #:end fix line type
-_startsac   = 'rd' #:start saccade
-_endsac     = 'gd' #:end saccade
-_slogfix    = 'r+' #:start log fix
-_elogfix    = 'g+' #:end log fix
-_logfixcol  = 'm-' #:logged fixation color (for comparison with our fixations)
+_smoothl    = 'g-'  #:smoothed line
+_startf     = 'ro'  #:start fix line type
+_endf       = 'go'  #:end fix line type
+_startsac   = 'rd'  #:start saccade
+_endsac     = 'gd'  #:end saccade
+_slogfix    = 'r+'  #:start log fix
+_elogfix    = 'g+'  #:end log fix
+_logfixcol  = 'm-'  #:logged fixation color (for comparison with our fixations)
 
 def gcd_iter(u, v):
     '''
@@ -258,6 +258,54 @@ class GazePlotWidget(FigureCanvas):
         return e1
 
 ##
+# A plot to create to visualize pupilsize within a Qt program
+#
+# The PupilPlotWidget represents a canvas that demonstrates 3
+# plots one for the X coordinate component in the eyesignal
+# one for the Y component and one for the velocity component
+#
+class PupilPlotWidget(FigureCanvas):
+    
+    ##
+    # Construct a PupilPlotWidget
+    #
+    # \param parent is the QtWidget that will be the parent of this widget.
+    # \param figsize a suggested figure size for the signal plot
+    # \param dpi a higher dpi will make a nicer plot, however will also take
+    # longer to draw
+    def __init__(self, parent = None, figsize=None, dpi=80):
+        self.fig = Figure(figsize=figsize, dpi=dpi)
+
+        FigureCanvas.__init__(self, self.fig)
+        self.setParent(parent)
+
+        # matplotlib axis for the x signal
+        self.axpupilleft = self.fig.add_subplot(311)
+        # matplotlib axis for the y signal
+        self.axpupilright= self.fig.add_subplot(312)
+        # matplotlib axis for the velocity
+        self.axpupilleftright= self.fig.add_subplot(313)
+
+    def clear(self):
+        self.axpupilleft.cla()
+        self.axpupilright.cla()
+        self.axpupilleftright.cla()
+
+    def plotPupil(self, times, lpup, rpup):
+        self.clear()
+        print (times[0:5])
+        print (lpup[0:5])
+        if len(lpup) > 0:
+            self.axpupilleft.plot(times, lpup, _leftl)
+        if len(rpup) > 0:
+            self.axpupilright.plot(times, rpup, _rightl)
+        if len(rpup) > 0 and len (lpup) > 0:
+            self.axpupilleftright.plot(
+                times, lpup, _leftl,
+                times, rpup, _rightl
+                )
+
+##
 # Displays a tabbed window with multiple signals
 #
 # This is the CustomDataView of InspectDataView.
@@ -269,6 +317,8 @@ class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
     RIGHT_EYE_STR  = "right eye signal"
     ## tile for the tab of the gaze plot
     GAZE_PLOT_STR  = "Gaze plot"
+    ## title for the tab of the pupil size
+    PUPIL_PLOT_STR = "Pupil size plot"
 
     ##
     # inits a TabbedSignalView
@@ -317,6 +367,14 @@ class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
         self.tabview.addTab(self._createPlotVBox(self.gazeplot, toolbar),
                             self.GAZE_PLOT_STR
                             )
+        
+        ## A PupilPlotWidget that shows the pupilsize over time
+        self.pupilplot = PupilPlotWidget()
+        toolbar = NavigationBar(self.pupilplot, self)
+        self.tabview.addTab(self._createPlotVBox(self.pupilplot,toolbar),
+                            self.PUPIL_PLOT_STR
+                            )
+
     ##
     # One tab contains a vertical box with a FigureCanvas and a Matplotlib toolbar.
     #
@@ -337,7 +395,7 @@ class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
         self.updatePlots()
 
     ##
-    # Repaints all three plots
+    # Repaints all four plots
     #
     def updatePlots(self):
         assert(self.MODEL.eyedata)
@@ -346,6 +404,7 @@ class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
         MM      = self.MAINWINDOW.getModel()[0] #ignore the controller
         lt, rt  = ed.getTimes()
         thresl, thresr = ed.getThreshold()
+        pupl, pupr = ed.getPupilSize()
         times   = None
         if len(lt) > 0:
             times = lt
@@ -389,9 +448,12 @@ class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
 
         self.gazeplot.plotGazePicture(trial.stimulus, stimdir, lx, ly, rx, ry)
 
+        self.pupilplot.plotPupil(times, pupl, pupr)
+
         self.lsignal.draw()
         self.rsignal.draw()
         self.gazeplot.draw()
+        self.pupilplot.draw()
 
     def showEvent(self, event):
         super(TabbedSignalView, self).showEvent(event)

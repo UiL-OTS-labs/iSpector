@@ -356,10 +356,10 @@ class EyeExperiment(object):
         return not (self == rhs)
 
     ##
-    # This function is for Fixation compability.
+    # This function is for Fixation compatibility.
     #
     # it reads the meta data and extracts the 
-    # usefull paramters.
+    # useful parameters.
     # returns string with filename that is suitable for fixation tool (Cozijn 1996)
     #
     # \deprecated

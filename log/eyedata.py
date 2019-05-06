@@ -14,7 +14,7 @@ from scipy.misc import imread
 from scipy.stats import nanmean
 from scipy.stats import nanmedian
 import scipy as sp
-from utils.tempsignal import savitzky_golay #newer version of scipy provide thereown version
+from utils.tempsignal import savitzky_golay #newer version of scipy provide there own version
 from eyelog import *
 
 ##
@@ -33,6 +33,13 @@ def generateYCoors(gazeentrylist):
     for i in gazeentrylist:
         yield i.y
 
+##
+# Generator to extract pupilsize
+# @param gazeentrylist an iterable with gazeentries with only one type of logentry
+# eg LGAZE or RGAZE
+def generatePupilSize(gazeentrylist):
+    for i in gazeentrylist:
+        yield i.pupil
 
 ##
 # Generator to extract the times of the gazeetries
@@ -109,6 +116,10 @@ class EyeData:
         self.ygazeright = np.array([])
         ## the smoothed y signal for the left eye.
         self.ygazerights= np.array([])
+        ## Pupil size for the left eye
+        self.lpup       = np.array([])
+        ## Pupil size for the right eye
+        self.lpup       = np.array([]) 
         ## The velocity of the left eye
         self.velol      = np.array([])
         ## The velocity of the right eye
@@ -154,6 +165,8 @@ class EyeData:
         self.ygazeleft  = getValueArray(eyetrial.lgaze, generateYCoors)
         self.xgazeright = getValueArray(eyetrial.rgaze, generateXCoors)
         self.ygazeright = getValueArray(eyetrial.rgaze, generateYCoors)
+        self.lpup       = getValueArray(eyetrial.lgaze, generatePupilSize)
+        self.rpup       = getValueArray(eyetrial.rgaze, generatePupilSize)
         ## The logged fixations of the left eye
         self.loglfix    = eyetrial.loglfix
         ## The logged fixations of the right eye
@@ -633,4 +646,10 @@ class EyeData:
     # returns a value of the threshold
     def getThreshold(self):
         return self.threshold
+
+    ##
+    # Return a tuple of the left and right pupil size.
+    def getPupilSize(self):
+        return self.lpup, self.rpup
+        
 
