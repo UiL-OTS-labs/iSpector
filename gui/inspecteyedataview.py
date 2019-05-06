@@ -293,8 +293,6 @@ class PupilPlotWidget(FigureCanvas):
 
     def plotPupil(self, times, lpup, rpup):
         self.clear()
-        print (times[0:5])
-        print (lpup[0:5])
         if len(lpup) > 0:
             self.axpupilleft.plot(times, lpup, _leftl)
         if len(rpup) > 0:
