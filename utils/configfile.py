@@ -16,6 +16,9 @@ EXTENSION   = ".json"
 ## contains the directory where the configfile should be stored.
 DIR         = "dir"
 
+## Name of config dir under linux / unix
+UNIX_CONFIG_DIR = ".config"
+
 ## constants used inside the json for the groups.
 STIMDIR     = "stimdir"
 FILEDIR     = "filedir"
@@ -26,6 +29,7 @@ OUTPUTDIR   = "outputdir"
 #
 # The config dir stores all the directories that are special to iSpector.
 class ConfigDir(dict):
+
     ##
     # initalizes a ConfigDir
     def __init__(self, stimdir="", filedir="", outputdir=""):
@@ -36,6 +40,13 @@ class ConfigDir(dict):
 ##
 # This is a representation of configuration used by iSpector
 class ConfigFile (dict):
+    
+    ##
+    # name of environmental variable that may hold the location where 
+    # configuration data is stored.
+    # https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+    # 2019
+    XDG_CONFIG_HOME = "XDG_CONFIG_HOME"
 
     ##
     # Opens the config file, or creates it when it does not exists
@@ -100,7 +111,11 @@ class ConfigFile (dict):
     # returns the unix configuration directory.
     # \return $HOME/.iSpector
     def _getUnixConfigDir(self):
-        return os.path.expanduser("~/.iSpector/")
+        path = os.getenv(self.XDG_CONFIG_HOME)
+        if path:
+            return path + program
+
+        return os.path.expanduser("~/" + UNIX_CONFIG_DIR + "/" + PROGRAM + "/")
     ##
     # Tries to find the $HOME under unices, but appdata under windows.
     #
