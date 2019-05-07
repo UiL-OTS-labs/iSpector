@@ -113,7 +113,7 @@ class ConfigFile (dict):
     def _getUnixConfigDir(self):
         path = os.getenv(self.XDG_CONFIG_HOME)
         if path:
-            return path + program
+            return path + PROGRAM + "/"
 
         return os.path.expanduser("~/" + UNIX_CONFIG_DIR + "/" + PROGRAM + "/")
     ##
