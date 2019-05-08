@@ -9,17 +9,26 @@ import json
 import sys
 import os.path
 
-## Our name
+##
+# Our name
 PROGRAM     = "iSpector"
-## extension for a configuration file
+##
+# extension for a configuration file
 EXTENSION   = ".json"
-## contains the directory where the configfile should be stored.
+##
+# contains the directory where the configfile should be stored.
 DIR         = "dir"
 
-## Name of config dir under linux / unix
+##
+# a constant uset to obtain the recently used files from the config
+FILE_HIST   = "file_hist"
+
+##
+# Name of config dir under linux / unix
 UNIX_CONFIG_DIR = ".config"
 
-## constants used inside the json for the groups.
+##
+# constants used inside the json for the groups.
 STIMDIR     = "stimdir"
 FILEDIR     = "filedir"
 OUTPUTDIR   = "outputdir"
@@ -87,6 +96,7 @@ class ConfigFile (dict):
         else :
             f = open(self.conffile, 'w')
         self[DIR] = ConfigDir()
+        self[FILE_HIST] = list()
 
         f.write(json.dumps(self))
         f.close()

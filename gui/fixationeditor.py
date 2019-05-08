@@ -409,7 +409,7 @@ class FixationEditModel(datamodel.EditDataModel):
         assert(t)
         fn = t.stimulus
         MM = self.getMainWindow().getModel()[0]
-        stimdir = MM[MM.DIRS][utils.configfile.STIMDIR]
+        stimdir = MM.stimulus_dir()
         abspath = path.join(stimdir, fn)
 
         # load relative to stimulus directory.

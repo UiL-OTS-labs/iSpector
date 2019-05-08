@@ -28,10 +28,10 @@ class NoSuchString(Exception):
         super(NoSuchString, self).__init__(message)
 
 def comboSelectString(combo, string):
-    '''
+    """
     Selects the string if available does noting when the string is allready
     selected
-    '''
+    """
     if combo.currentText() == string:
         return
     index = combo.findText(string)
@@ -41,39 +41,41 @@ def comboSelectString(combo, string):
         combo.setCurrentIndex(index)
 
 class Controller :
-    '''
+    """
     The controller keeps track if the user enters valid input inside the gui.
     if the input is valdid the controller updates the model.
-    '''
+    """
     
     def __init__(self, model, view):
-        '''
+        """
         @param Model the model that contains all parameters for succesfull parsing
         the input files and the input files themselves.
-        '''
+        """
         assert (model and view)
         self.model  = model
         self.view   = view
         self._initModel()
 
     def _initModel(self):
-        ''' Fixes model initially '''
-        self.model[self.model.STATUS]= "ready"
+        """ Fixes model initially """
+        self.model[self.model.STATUS] = "ready"
         
         # Only select real files and create a absolute path
-        self.model[self.model.FILES] = [ p.abspath(i) for i in self.model[self.model.FILES] if p.isfile(i) ]
-        self.model[self.model.FILES] = sorted(set(self.model[self.model.FILES]))
+        self.model.set_files(
+            [p.abspath(i) for i in self.model.files() if p.isfile(i) ]
+        )
+        self.model.set_files(sorted(set(self.model.files())))
         
         # create selected file in the model namespace
         self.model[self.model.SELECTED] = []
-        if self.model[self.model.FILES]:
-            self.model[self.model.SELECTED] = [self.model[self.model.FILES][0]]
+        if self.model.files():
+            self.model[self.model.SELECTED] = [self.model.files()[0]]
 
-        if self.model[self.model.DIRS][utils.configfile.OUTPUTDIR]:
-            self.updateDirectory(self.model[self.model.DIRS][utils.configfile.OUTPUTDIR])
+        if self.model.output_dir():
+            self.updateDirectory(self.model.output_dir())
 
-        if self.model[self.model.DIRS][utils.configfile.STIMDIR]:
-            self.updateStimDir(self.model[self.model.DIRS][utils.configfile.STIMDIR])
+        if self.model.stimulus_dir():
+            self.updateStimDir(self.model.stimulus_dir())
 
     def updateAction(self, string):
         self.model[self.model.ACTION] = string
@@ -133,70 +135,69 @@ class Controller :
                               )
     
     def updateNThreshold(self, real):
-        '''
+        """
         set the number of times the mean or median must be taken to get
         the threshold.
         @param real number larger than 0
-        '''
+        """
         value = float(real)
         if value <= 0.0:
             return
         self.model[self.model.NTHRESHOLD] = value
 
     def updateFiles(self, filenamelist):
-        ''' set filenamelist as the new selected files. '''
+        """ set filenamelist as the new selected files. """
         filenamelist = [str(i) for i in filenamelist]
         for i in filenamelist:
             #remove possible dupplicates
-            if not (i in self.model[self.model.FILES]):
-                self.model[self.model.FILES].append(i)
-        self.model[self.model.FILES].sort()
+            if not (i in self.model.files()):
+                self.model.files().append(i)
+        self.model.files().sort()
 
     def updateDefaultOpenDir(self, d):
-        '''
+        """
         Store the default open directory
-        '''
+        """
         if p.isdir(d):
-            dirs = self.model[self.model.DIRS]
-            dirs[utils.configfile.FILEDIR] = d
+            dirs = self.model.set_file_dir(d)
 
     def updateDirectory(self, dirname):
-        ''' updates the output directory to be dirname '''
+        """ updates the output directory to be dirname """
         dirname = str(dirname)
         if p.isdir(dirname):
-            self.model[self.model.DIRS][utils.configfile.OUTPUTDIR] = p.abspath(dirname)
+            self.model.set_output_dir(p.abspath(dirname))
         else:
-            self.model[self.model.DIRS][utils.configfile.OUTPUTDIR] = p.abspath(".")
+            self.model.set_output_dir(p.abspath("."))
     
     def updateStimDir(self, dirname):
-        ''' updates the stimulus directory to be dirname '''
+        """ updates the stimulus directory to be dirname """
         dirname = str(dirname)
         if p.isdir(dirname):
-            self.model[self.model.DIRS][utils.configfile.STIMDIR] = p.abspath(dirname)
+            self.model.set_stimulus_dir(p.abspath(dirname))
         else:
-            self.model[self.model.DIRS][utils.configfile.STIMDIR] = p.abspath(".")
+            self.model.set_stimulus_dir(p.abspath("."))
 
     def updateSelected(self, flist):
-        ''' Sets the new selected items in the file list. '''
+        """ Sets the new selected items in the file list. """
         flist = [str(i) for i in flist]
         if flist != self.model[self.model.SELECTED]:
             self.model[self.model.SELECTED] = flist
 
     def removeSelected(self, flist):
-        ''' Remove items selected for an action'''
+        """ Remove items selected for an action"""
         flist = [str(i) for i in flist]
         removeset   = set(flist)
-        oldset      = set(self.model[self.model.FILES])
+        oldset      = set(self.model.files())
         newset      = oldset - removeset
         self.model[self.model.SELECTED] = []
-        self.model[self.model.FILES] = list(sorted(newset))
+        self.model.set_files(list(sorted(newset)))
 
 
 class DirGroup (QtGui.QGroupBox):
-    '''
+    """
     The dirgroup handles all directories that are useful for
     The program.
-    '''
+    """
     def __init__(self, controller, model, mainwindow):
         super(DirGroup, self).__init__("Directories")
         self.controller = controller
@@ -248,15 +249,13 @@ class DirGroup (QtGui.QGroupBox):
         self.stimdirlabel.setText(name)
 
     def updateFromModel(self):
-        ''' examines the model. '''
-        dirs = self.MODEL[self.MODEL.DIRS]
-        self._setOutDirlabel(dirs[utils.configfile.OUTPUTDIR])
-        self._setStimDirlabel(dirs[utils.configfile.STIMDIR])
+        """ examines the model. """
+        self._setOutDirlabel(self.MODEL.output_dir())
+        self._setStimDirlabel(self.MODEL.stimulus_dir())
     
     def _openOutDir(self):
-        ''' Shows the file dialog to choose a new dir. '''
-        dirs= self.MODEL[self.MODEL.DIRS]
-        d   = dirs[utils.configfile.OUTPUTDIR]
+        """ Shows the file dialog to choose a new dir. """
+        d   = self.MODEL.output_dir()
         folder = QtGui.QFileDialog.getExistingDirectory(
                                                caption          = "Select output directory",
                                                directory        = d
@@ -266,9 +265,8 @@ class DirGroup (QtGui.QGroupBox):
         self.updateFromModel()
     
     def _openStimDir(self):
-        ''' Shows the file dialog to choose a new dir. '''
-        dirs= self.MODEL[self.MODEL.DIRS]
-        d   = dirs[utils.configfile.STIMDIR]
+        """ Shows the file dialog to choose a new dir. """
+        d   = self.MODEL.stimulus_dir()
         folder = QtGui.QFileDialog.getExistingDirectory(
                                                caption          = "Select stimulus directory",
                                                directory        = d
@@ -279,12 +277,12 @@ class DirGroup (QtGui.QGroupBox):
 
 
 class OptionGroup(QtGui.QGroupBox):
-    '''
+    """
     Option group contains mainly the parameters to control
     the detection of fixations and saccades. It
     also sets the main action of iSpector to either
     inspect the data or to extract it forFixation.
-    '''
+    """
     
     actiontip       =("Select <b>inspect</b> to look at the file, and\n"
                       "<b>extract</b> to create output for fixation.")
@@ -313,7 +311,7 @@ class OptionGroup(QtGui.QGroupBox):
         self._init()
 
     def _handle(self, arg1=None):
-        ''' calls the right event handler and updates the view '''
+        """ calls the right event handler and updates the view """
         self.handlers[self.sender()](arg1)
         self.mainwindow.updateFromModel()
 
@@ -345,9 +343,9 @@ class OptionGroup(QtGui.QGroupBox):
         self.controller.updateNThreshold(string)
 
     def _init(self):
-        ''' place all Qt widgets on the in a grid
+        """ place all Qt widgets on the in a grid
             and put the grid inside the groupwidget
-        '''
+        """
         self.setFlat(False)
         self.setLayout(self.grid)
         self._addLabel(u"Action:",      0, 0)
@@ -434,13 +432,13 @@ class OptionGroup(QtGui.QGroupBox):
         }
     
     def _addLabel(self, string, row , column, rowspan=1, heightspan=1):
-        ''' utility to add labels to the layout '''
+        """ utility to add labels to the layout """
         label = QtGui.QLabel(string)
         self.grid.addWidget(label, row, column, rowspan, heightspan)
         label.show()
 
     def updateFromModel(self):
-        ''' Sets the options combo to the values in the model. '''
+        """ Sets the options combo to the values in the model. """
         comboSelectString(self.actioncombo, self.MODEL[self.MODEL.ACTION])
 
         if ((self.MODEL[self.MODEL.EXTRACT_LEFT] and self.MODEL[self.MODEL.EXTRACT_RIGHT] ) or
@@ -474,9 +472,9 @@ class OptionGroup(QtGui.QGroupBox):
 
 
 class FileEntry(QtGui.QListWidgetItem):
-    ''' FileEntry can be cast to string. It displays the
+    """ FileEntry can be cast to string. It displays the
         filename, but keeps the directory in mind.
-    '''
+    """
     
     def __init__(self, directory, fname, parent):
         super(FileEntry, self).__init__(fname, parent)
@@ -485,14 +483,14 @@ class FileEntry(QtGui.QListWidgetItem):
         self.setToolTip(str(self))
 
     def __str__(self):
-        ''' Create absolute pathname. '''
+        """ Create absolute pathname. """
         return p.join(self.directory, self.fname)
 
 class FileEntryList(QtGui.QListWidget) :
-    ''' 
+    """
     Handles delete keypress to remove one entry from
     the model and view.
-    '''
+    """
     def __init__(self, FileView,  parent=None):
         super(FileEntryList, self).__init__(parent)
         self.view = FileView 
@@ -502,19 +500,19 @@ class FileEntryList(QtGui.QListWidget) :
             self.view.removeSelected()
 
 class InputOutput(QtGui.QVBoxLayout) :
-    '''
+    """
     InputOutput helps to display the files used
     as input for the fixation dectection algorithms
     either to display them or to extract data
     for Fixation. It also allows to set the output
     directory.
-    '''
+    """
 
     FILTERS     = u"EyeData (*.csv *.asc);;all (*)"
     EYE_FILT    = u"EyeData"
     
     def __init__(self, controller, model):
-        ''' initializes model, controller and finally the gui elements'''
+        """ initializes model, controller and finally the gui elements"""
         super(InputOutput, self).__init__()
         self.MODEL      = model
         self.controller = controller
@@ -522,7 +520,7 @@ class InputOutput(QtGui.QVBoxLayout) :
         self._init()
 
     def _init(self):
-        ''' Initializes the gui elements '''
+        """ Initializes the gui elements """
         label = QtGui.QLabel("Input files:")
         self.addWidget(label)
 
@@ -532,15 +530,14 @@ class InputOutput(QtGui.QVBoxLayout) :
         self.addWidget(self.fileviewwidget)
         
     def onSelection(self):
-        ''' Called when selection changes. '''
+        """ Called when selection changes. """
         items = self.fileviewwidget.selectedItems()
         self.controller.updateSelected(items)
         #don't update, causes infinite recursion
 
     def _openFiles(self):
-        ''' This opens files, and updates the data model. '''
-        dirs = self.MODEL[self.MODEL.DIRS]
-        d = dirs[utils.configfile.FILEDIR]
+        """ This opens files, and updates the data model. """
+        d = self.MODEL.file_dir()
         l = QtGui.QFileDialog.getOpenFileNames(caption          = "Select input file(s)",
                                                directory        = d,
                                                filter           = self.FILTERS,
@@ -553,14 +550,14 @@ class InputOutput(QtGui.QVBoxLayout) :
             self.updateFromModel()
 
     def removeSelected(self):
-        ''' delete selected item's '''
+        """ delete selected item's """
         l = self.fileviewwidget.selectedItems()
         self.controller.removeSelected(l)
         self.updateFromModel()
 
     def updateFromModel(self):
-        ''' Add filenames to view '''
-        modelset = set (self.MODEL[self.MODEL.FILES])
+        """ Add filenames to view """
+        modelset = set (self.MODEL.files())
         currentset = set([])
         selected = self.MODEL[self.MODEL.SELECTED]
         itemlist = self.fileviewwidget.findItems("*", QtCore.Qt.MatchWildcard)
@@ -569,7 +566,7 @@ class InputOutput(QtGui.QVBoxLayout) :
 
         currentset = currentset & modelset
         self.fileviewwidget.clear()
-        for i in self.MODEL[self.MODEL.FILES]:
+        for i in self.MODEL.files():
             directory, filename = p.split(i)
             item = FileEntry(directory, filename, self.fileviewwidget)
             if filename in selected:
@@ -594,7 +591,7 @@ class ISpectorGui(QtGui.QMainWindow):
     ##
     # Construct the main window.
     def __init__(self, model):
-        ''' Inits the main window '''
+        """ Inits the main window """
         super(ISpectorGui, self).__init__()
         
         ## the controller from a MVC gui implementation
@@ -722,7 +719,7 @@ class ISpectorGui(QtGui.QMainWindow):
         if len(self.MODEL[self.MODEL.SELECTED]) > 0:
             filelist = self.MODEL[self.MODEL.SELECTED]
         else:
-            filelist = self.MODEL[self.MODEL.FILES]
+            filelist = self.MODEL.files()
         
         model = datamodel.ExamineDataModel(filelist, self)
         controller = datamodel.ExamineDataController(model)
@@ -741,7 +738,7 @@ class ISpectorGui(QtGui.QMainWindow):
         if len(self.MODEL[self.MODEL.SELECTED]) > 0:
             filelist = self.MODEL[self.MODEL.SELECTED]
         else:
-            filelist = self.MODEL[self.MODEL.FILES]
+            filelist = self.MODEL.files()
 
         model           = fixationeditor.FixationEditModel(filelist,
                                                            self,
@@ -757,10 +754,10 @@ class ISpectorGui(QtGui.QMainWindow):
         
 
     def _createOutputFilename(self, experiment, fname, outdir):
-        ''' Create a suitable output absolute pathname
+        """ Create a suitable output absolute pathname
             based on the input of the experiment
             or the output.
-        '''
+        """
         # create output filename
         expname  = experiment.getFixationName() # take a Fixation compatible output name
         tempdir, shortfname = p.split(fname)
@@ -855,9 +852,9 @@ class ISpectorGui(QtGui.QMainWindow):
         self.updateFromModel()
 
     def doAction(self):
-        '''
+        """
         Runs the action either to inspect or extract the selected items
-        '''
+        """
         files = self.MODEL[self.MODEL.SELECTED]
         if not files:
             # if no files are selected ask whether all files in the 
@@ -865,13 +862,12 @@ class ISpectorGui(QtGui.QMainWindow):
             self.reportStatus(sm.StatusMessage.warning,
                     "No files selected running action on all files")
             
-            files = self.MODEL[self.MODEL.FILES]
+            files = self.MODEL.files()
         if not files:
             return
 
         if self.MODEL[self.MODEL.ACTION] == self.MODEL.EXTRACT:
-            dirs = self.MODEL[self.MODEL.DIRS]
-            d = dirs[utils.configfile.OUTPUTDIR]
+            d = self.MODEL.output_dir()
             self.extractForFixation(files, d)
         elif self.MODEL[self.MODEL.ACTION] == self.MODEL.INSPECT:
             self.examine(files)
@@ -889,9 +885,9 @@ class ISpectorGui(QtGui.QMainWindow):
 
 
 class MainGuiModel(dict):
-    '''
+    """
     The model of the parameters of iSpector
-    '''
+    """
 
     SMOOTH          = "smooth"          ##<bool
     SMOOTHWIN       = "smoothwin"       ##<int
@@ -903,8 +899,8 @@ class MainGuiModel(dict):
     ACTION          = "action"          ##<string
     EXTRACT_LEFT    = "extract-left"    ##<bool
     EXTRACT_RIGHT   = "extract-right"   ##<bool
-    DIRS            = "dirs"            ##<dict
-    FILES           = "files"           ##<list[string]
+    #DIRS            = "dirs"            ##<dict
+    #FILES           = "files"           ##<list[string]
     SELECTED        = "selected"        ##<list[string]
     STATUS          = "status"          ##<string
 
@@ -923,20 +919,21 @@ class MainGuiModel(dict):
                         ]
 
     def __init__ (self, cmdargs):
-        ''' 
+        """
         First we set the values from the configuration file,
         then we set/overwrite from         
-        '''
-        self.readconfig = False
+        """
         self.configfile = utils.configfile.ConfigFile()
         self.configfile.parse()
 
-        self._init_from_config()
+        self.read_config = self._check_config()
 
         if cmdargs.stim_dir:
-            self[self.DIRS][utils.configfile.STIMDIR]  = cmdargs.stim_dir
+            self.set_stimulus_dir(cmdargs.stim_dir)
         if cmdargs.output_dir:
-            self[self.DIRS][utils.configfile.OUTPUTDIR]= cmdargs.output_dir
+            self.set_output_dir(cmdargs.output_dir)
+        if cmdargs.files:
+            self.set_files(cmdargs.files)
 
         self[self.SMOOTH]        = cmdargs.smooth
         self[self.SMOOTHWIN]     = cmdargs.swin
@@ -948,17 +945,64 @@ class MainGuiModel(dict):
         self[self.ACTION]        = cmdargs.action
         self[self.EXTRACT_LEFT]  = cmdargs.extract_left
         self[self.EXTRACT_RIGHT] = cmdargs.extract_right
-        self[self.FILES]         = cmdargs.files
         self[self.STATUS]        = "ready"
 
-
     def readConfig(self):
-        return self.readconfig
+        """Determine whether iSpector was able to read/parse the config file."""
+        return self.read_config
 
-    def _init_from_config(self):
-        try :
-            self[self.DIRS]  = self.configfile[utils.configfile.DIR]
-            self.readconfig = True
-        except KeyError as e:
-            # put a empty one
-            self[self.DIRS] = utils.configfile.ConfigDir()
+    def config_dirs(self):
+        """Obtain the map with common directories."""
+        return self.configfile[utils.configfile.DIR]
+
+    def stimulus_dir(self):
+        """Get the stimulus directory."""
+        return self.config_dirs()[utils.configfile.STIMDIR]
+
+    def set_stimulus_dir(self, stimdir):
+        """Set the stimulus directory."""
+        self.config_dirs()[utils.configfile.STIMDIR] = stimdir
+
+    def output_dir(self):
+        """Get the output directory."""
+        return self.config_dirs()[utils.configfile.OUTPUTDIR]
+
+    def set_output_dir(self, outputdir):
+        """Set the output directory."""
+        self.config_dirs()[utils.configfile.OUTPUTDIR] = outputdir
+
+    def file_dir(self):
+        """Get the directory in which the last file was opened."""
+        return self.config_dirs()[utils.configfile.FILEDIR]
+
+    def set_file_dir(self, outputdir):
+        """Set the output directory."""
+        self.config_dirs()[utils.configfile.OUTPUTDIR] = outputdir
+
+    def set_files(self, files):
+        """Set the files on which iSpector operates."""
+        self.configfile[utils.configfile.FILE_HIST] = list(files)
+
+    def files(self):
+        """Obtain the list of files on which iSpector operates."""
+        return self.configfile[utils.configfile.FILE_HIST]
+
+    def _check_config(self):
+        """Check the config file, to see whether the expected member are present.
+
+        This function can fail if a necessary element of the expected data
+        members isn't present. If it isn't, then this function should initialize
+        it with a default value.
+        @return This function returns true when there were no expected data members
+        missing.
+        """
+        missing = False
+        if utils.configfile.DIR not in self.configfile:
+            self.configfile[utils.configfile.DIR] = utils.configfile.ConfigDir()
+            missing = True
+
+        if utils.configfile.FILE_HIST not in self.configfile:
+            self.configfile[utils.configfile.FILE_HIST] = list()
+            missing= True
+
+        return not missing

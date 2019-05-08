@@ -442,7 +442,7 @@ class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
         lx, ly = ed.getLeft()
         rx, ry = ed.getRight()
 
-        stimdir = MM[MM.DIRS][utils.configfile.STIMDIR]
+        stimdir = MM.stimulus_dir()
 
         self.gazeplot.plotGazePicture(trial.stimulus, stimdir, lx, ly, rx, ry)
 
