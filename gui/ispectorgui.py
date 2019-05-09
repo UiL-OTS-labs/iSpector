@@ -67,9 +67,9 @@ class Controller :
         self.model.set_files(sorted(set(self.model.files())))
         
         # create selected file in the model namespace
-        self.model[self.model.SELECTED] = []
         if self.model.files():
-            self.model[self.model.SELECTED] = [self.model.files()[0]]
+            #set the first file as selected
+            self.model.selected.append(self.model.files()[0])
 
         if self.model.output_dir():
             self.updateDirectory(self.model.output_dir())
@@ -179,9 +179,9 @@ class Controller :
 
     def updateSelected(self, flist):
         """ Sets the new selected items in the file list. """
-        flist = [str(i) for i in flist]
-        if flist != self.model[self.model.SELECTED]:
-            self.model[self.model.SELECTED] = flist
+        flist = sorted([str(i) for i in flist])
+        if flist != self.model.selected:
+            self.model.selected = flist
 
     def removeSelected(self, flist):
         """ Remove items selected for an action"""
@@ -189,7 +189,7 @@ class Controller :
         removeset   = set(flist)
         oldset      = set(self.model.files())
         newset      = oldset - removeset
-        self.model[self.model.SELECTED] = []
+        self.model.selected = []
         self.model.set_files(list(sorted(newset)))
 
 
@@ -559,7 +559,7 @@ class InputOutput(QtGui.QVBoxLayout) :
         """ Add filenames to view """
         modelset = set (self.MODEL.files())
         currentset = set([])
-        selected = self.MODEL[self.MODEL.SELECTED]
+        selected = self.MODEL.selected
         itemlist = self.fileviewwidget.findItems("*", QtCore.Qt.MatchWildcard)
         for i in itemlist:
             currentset.add(str(i))
@@ -569,7 +569,7 @@ class InputOutput(QtGui.QVBoxLayout) :
         for i in self.MODEL.files():
             directory, filename = p.split(i)
             item = FileEntry(directory, filename, self.fileviewwidget)
-            if filename in selected:
+            if i in selected:
                 item.setSelected(True)
             else:
                 item.setSelected(False)
@@ -716,8 +716,8 @@ class ISpectorGui(QtGui.QMainWindow):
     # Examines all selected files.
     def examine(self, filelist):
         filelist = []
-        if len(self.MODEL[self.MODEL.SELECTED]) > 0:
-            filelist = self.MODEL[self.MODEL.SELECTED]
+        if len(self.MODEL.selected) > 0:
+            filelist = self.MODEL.selected
         else:
             filelist = self.MODEL.files()
         
@@ -735,8 +735,8 @@ class ISpectorGui(QtGui.QMainWindow):
 
     def editFixations(self, filelist):
         filelist = []
-        if len(self.MODEL[self.MODEL.SELECTED]) > 0:
-            filelist = self.MODEL[self.MODEL.SELECTED]
+        if len(self.MODEL.selected) > 0:
+            filelist = self.MODEL.selected
         else:
             filelist = self.MODEL.files()
 
@@ -855,7 +855,7 @@ class ISpectorGui(QtGui.QMainWindow):
         """
         Runs the action either to inspect or extract the selected items
         """
-        files = self.MODEL[self.MODEL.SELECTED]
+        files = self.MODEL.selected
         if not files:
             # if no files are selected ask whether all files in the 
             # listview should be processed.
@@ -901,7 +901,7 @@ class MainGuiModel(dict):
     EXTRACT_RIGHT   = "extract-right"   ##<bool
     #DIRS            = "dirs"            ##<dict
     #FILES           = "files"           ##<list[string]
-    SELECTED        = "selected"        ##<list[string]
+    #SELECTED        = "selected"        ##<list[string]
     STATUS          = "status"          ##<string
 
     # strings releated to a certain action
@@ -923,9 +923,14 @@ class MainGuiModel(dict):
         First we set the values from the configuration file,
         then we set/overwrite from         
         """
+
+        ##
+        # Configurations that are stored between runs
         self.configfile = utils.configfile.ConfigFile()
         self.configfile.parse()
 
+        ##
+        # If there were missing items in the config file this is set to False.
         self.read_config = self._check_config()
 
         if cmdargs.stim_dir:
@@ -934,6 +939,10 @@ class MainGuiModel(dict):
             self.set_output_dir(cmdargs.output_dir)
         if cmdargs.files:
             self.set_files(cmdargs.files)
+
+        ##
+        # The files that are selected.
+        self.selected = []
 
         self[self.SMOOTH]        = cmdargs.smooth
         self[self.SMOOTHWIN]     = cmdargs.swin
