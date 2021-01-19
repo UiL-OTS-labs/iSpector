@@ -11,8 +11,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.misc import imread
-from scipy.stats import nanmean
-from scipy.stats import nanmedian
+try :
+    from scipy.stats import nanmean
+    from scipy.stats import nanmedian
+except ImportError:
+    from numpy import nanmean
+    from numpy import nanmedian
+
 import scipy as sp
 from utils.tempsignal import savitzky_golay #newer version of scipy provide there own version
 from eyelog import *
