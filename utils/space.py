@@ -37,4 +37,4 @@ if __name__ == "__main__":
     p1 = Point(x=0.0, y=0.0)
     t = (4.0, 5.0)
     p2 = Point(tup=t)
-    print "The distance between ", p1, "and ", p2, " = ", Point.distance(p1, p2)
+    print("The distance between ", p1, "and ", p2, " = ", Point.distance(p1, p2))

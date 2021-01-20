@@ -37,8 +37,7 @@ class Stack(object):
         ## The maximum number of items or infinite if maxitems < 0
         self._maxitems = maxitems
         if items:
-            for i in reversed(items):
-                self._s.append(i)
+            self._s = list(reversed(items))
 
         # Throw away the abundant items.
         if self._maxitems >= 0:
@@ -136,31 +135,31 @@ class Stack(object):
 
 if __name__ == "__main__":
     s = Stack([1,2,3], 2)
-    print s
+    print(s)
     s.push(1)
     try:
         while len(s) >= 0:
-            print s.pop(), " ", 
+            print (s.pop(), " ")
     except Stack.StackEmpty as e:
-        print str(e)
-    print
+        print(str(e))
+    print()
 
     s = Stack (["Amateur", "Does", "Get", "Better", "Eventually"])
-    print s
+    print(s)
     s.push("Every")
-    print s
+    print(s)
     for i in s:
-        print i, " ",
-    print
+        print (i, " ")
+    print()
 
     s.pop()
     while len(s) > 0:
-        print s.pop()
+        print(s.pop())
 
     s = Stack(range(6))
-    print s
+    print(s)
     s.setMaxSize(3)
-    print s
+    print(s)
 
     assert(s.top() is s.pop())
     assert(not (s.pop() is s.top()))
