@@ -128,7 +128,7 @@ class StimulusWidget(QtGui.QWidget):
         if pixmap:
             painter.drawPixmap(pixmap.rect(), pixmap, pixmap.rect())
         else:
-            print "No pixmap loaded"
+            print("No pixmap loaded")
         
         # Let the derived widget do the other painting
         self.onCustomPaint(painter)

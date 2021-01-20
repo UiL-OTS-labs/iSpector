@@ -7,17 +7,17 @@ from log.parseeyefile import *
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 
-import inspecteyedataview
+from . import inspecteyedataview
 from gui import datamodel
-import statusmessage as sm
+from . import statusmessage as sm
 import sys
 import os
 import os.path as p
-import ievent
-import statusbox
+from . import ievent
+from . import statusbox
 import utils.configfile
 import iSpectorVersion
-import fixationeditor
+from . import fixationeditor
 
 
 LOGO = "iSpectorLogo.svg"
@@ -348,13 +348,13 @@ class OptionGroup(QtGui.QGroupBox):
         """
         self.setFlat(False)
         self.setLayout(self.grid)
-        self._addLabel(u"Action:",      0, 0)
-        self._addLabel(u"Inspect/Extract eye:", 1, 0)
-        self._addLabel(u"Smooth:",      2, 0)
-        self._addLabel(u"Smoothwindow:",3, 0)
-        self._addLabel(u"Smoothorder:", 4, 0)
-        self._addLabel(u"Threshold:",   5, 0)
-        self._addLabel(u"NThreshold:",  6, 0)
+        self._addLabel("Action:",      0, 0)
+        self._addLabel("Inspect/Extract eye:", 1, 0)
+        self._addLabel("Smooth:",      2, 0)
+        self._addLabel("Smoothwindow:",3, 0)
+        self._addLabel("Smoothorder:", 4, 0)
+        self._addLabel("Threshold:",   5, 0)
+        self._addLabel("NThreshold:",  6, 0)
         
         # A combobox that sets the main action of the program.
         combo = QtGui.QComboBox()
@@ -508,8 +508,8 @@ class InputOutput(QtGui.QVBoxLayout) :
     directory.
     """
 
-    FILTERS     = u"EyeData (*.csv *.asc);;all (*)"
-    EYE_FILT    = u"EyeData"
+    FILTERS     = "EyeData (*.csv *.asc);;all (*)"
+    EYE_FILT    = "EyeData"
     
     def __init__(self, controller, model):
         """ initializes model, controller and finally the gui elements"""

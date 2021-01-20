@@ -11,11 +11,11 @@
 
 import time
 import copy
-import datamodel 
-import dataview 
-import stimuluswidget
+from . import datamodel 
+from . import dataview 
+from . import stimuluswidget
 import utils 
-from statusmessage import StatusMessage
+from .statusmessage import StatusMessage
 from log.eyelog import LogEntry, FixationEntry, SaccadeEntry, FixationEndEntry
 from utils import space
 from PyQt4 import QtGui
@@ -572,15 +572,15 @@ class FixationEditModel(datamodel.EditDataModel):
         for i in self._selected:
             translater  = _TranslateFix(x, y, i)
             if edit.lfix:
-                edit.lfix   = map(translater, edit.lfix)
+                edit.lfix   = list(map(translater, edit.lfix))
             if edit.rfix:
-                edit.rfix   = map(translater, edit.rfix)
+                edit.rfix   = list(map(translater, edit.rfix))
             if edit.avgfix:
-                edit.avgfix = map(translater, edit.avgfix)
+                edit.avgfix = list(map(translater, edit.avgfix))
         
         # also modify the selected.
         translater = _TranslateFix(x, y)
-        map(translater, self._selected)
+        list(map(translater, self._selected))
         if edit.lfix:
             edit.lsac = self.connectFixations(edit.lfix)
         if edit.rfix:
@@ -679,7 +679,7 @@ class FixationUpdateCanvas(stimuluswidget.StimulusWidget, dataview.CustomDataVie
             if selected:
                 x, y = self.MODEL.getVector()
                 translator      = _TranslateFix(x, y)
-                translatedlist  = map(translator, copy.deepcopy(self.MODEL.getSelected()))
+                translatedlist  = list(map(translator, copy.deepcopy(self.MODEL.getSelected())))
                 self._paintFixations(painter, translatedlist, black, black)
         else:
             pass

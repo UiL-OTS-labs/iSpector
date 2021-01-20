@@ -15,9 +15,9 @@ from log.eyeexperiment import EyeExperiment
 from log.parseeyefile import parseEyeFile
 from log.eyedata import EyeData 
 from log.eyelog import LogEntry
-import datamodel as dm
-import dataview  as dv
-import statusmessage as sm
+from . import datamodel as dm
+from . import dataview  as dv
+from . import statusmessage as sm
 import utils.configfile 
 
 
@@ -457,7 +457,7 @@ class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
         super(TabbedSignalView, self).showEvent(event)
         margins = self.getContentsMargins()
         lay = self.layout()
-        print "in show event with margins is {0} layout.spacing = {1}".format(str(margins), str(lay.spacing()))
+        print("in show event with margins is {0} layout.spacing = {1}".format(str(margins), str(lay.spacing())))
         
 
 ##

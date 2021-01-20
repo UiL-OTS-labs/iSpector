@@ -7,7 +7,7 @@
 
 from PyQt4 import QtGui
 from PyQt4.QtGui import QIcon
-from statusmessage import *
+from .statusmessage import *
 
 class StatusBoxMessage(QtGui.QListWidgetItem):
     '''

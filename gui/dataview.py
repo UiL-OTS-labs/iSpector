@@ -10,8 +10,8 @@
 
 from PyQt4 import QtGui
 from PyQt4 import QtCore
-import datamodel
-import savedialog
+from . import datamodel
+from . import savedialog
 import os
 
 ##
