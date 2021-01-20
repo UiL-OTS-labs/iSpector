@@ -12,13 +12,9 @@ import re
 
 ##
 #An abstract base class for all LogEntries in an eyelog. 
-class LogEntry (object):
+class LogEntry (object, metaclass=ABCMeta):
     
     ## LogEntry contains functions from a ABCMeta classes
-    __metaclass__ = ABCMeta
-    
-    # entry types
-    ## Entry that describes a left gaze sample
     LGAZE       = 0
     ## Entry that describes a right gaze sample
     RGAZE       = 1
@@ -604,8 +600,8 @@ class SortFixationLog:
                 return self.mapdict[lefthandside.getEntryType()] -\
                        self.mapdict[righthandside.getEntryType()]
             except KeyError as e:
-                print "left = ",lefthandside.getEntryType(),
-                print "\tright= ",righthandside.getEntryType() 
+                print("left = ",lefthandside.getEntryType(), end=' ')
+                print("\tright= ",righthandside.getEntryType()) 
         return diff
 
 ##
@@ -666,7 +662,7 @@ def saveForFixation(entries, filename):
     entries.extend(endsaccades)
 
     # generate AscGazeEntries
-    for i, j in itertools.izip_longest(generateLGaze(entries), generateRGaze(entries)):
+    for i, j in itertools.zip_longest(generateLGaze(entries), generateRGaze(entries)):
         entries.append( AscGazeEntry(i, j) )
     
     eyetype = StartEntry.LEFT

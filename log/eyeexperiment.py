@@ -4,7 +4,7 @@
 # \file eyeexperiment.py handles all eyeevents in an experiment
 #
 
-from eyelog import *
+from .eyelog import *
 import re
 
 

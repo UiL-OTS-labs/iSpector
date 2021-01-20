@@ -8,7 +8,7 @@
 #
 
 import re
-from eyelog import *
+from .eyelog import *
 import gui.statusmessage as sm 
 
 ##
@@ -147,8 +147,8 @@ def extractAscLog(lines):
                 logentries.append(rgaze)
             except ValueError as v:
                 import traceback
-                print i
-                print traceback.print_exc()
+                print(i)
+                print(traceback.print_exc())
             continue
         m = sampleformat.search(i)
         if m:

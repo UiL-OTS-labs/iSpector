@@ -20,7 +20,7 @@ except ImportError:
 
 import scipy as sp
 from utils.tempsignal import savitzky_golay #newer version of scipy provide there own version
-from eyelog import *
+from .eyelog import *
 
 ##
 # Generator to extract X coordinates
@@ -285,7 +285,7 @@ class EyeData:
                 ## the mean velocity of the left eye signal
                 self.meanvelol=nanmean(self.velol)
             except FloatingPointError as e:
-                print self.velol
+                print(self.velol)
                 exit(e)
         else:
             self.meanvelol=float('nan')
@@ -295,7 +295,7 @@ class EyeData:
                 ## the mean velocity of the right eye signal
                 self.meanvelor=nanmean(self.velor)
             except FloatingPointError as e:
-                print self.velor
+                print(self.velor)
                 exit(e)
         else:
             self.meanvelor=float('nan')
@@ -367,11 +367,11 @@ class EyeData:
                 rightsnr = nan
             if self.hasRightGaze():
                 if not (rightsnr > 0):
-                    print self.velor, rightsnr, self.meanvelor
+                    print(self.velor, rightsnr, self.meanvelor)
                     raise ValueError('We have gazedata but are unable to calculate a snr')
             if self.hasLeftGaze():
                 if not (leftsnr > 0):
-                    print self.velol, leftsnr, self.meanvelol
+                    print(self.velol, leftsnr, self.meanvelol)
                     raise ValueError('We have gazedata but are unable to calculate a snr')
             self.threshold = leftsnr, rightsnr
         else:
