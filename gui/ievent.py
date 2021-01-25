@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #import QtGui
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 
 class StatusEvent(QtCore.QEvent):
     

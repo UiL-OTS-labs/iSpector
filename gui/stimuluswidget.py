@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from PyQt4 import QtGui
+from PyQt5 import QtWidgets, QtGui
 
 DEBUG = False
 
@@ -18,7 +18,7 @@ DEBUG = False
 # to align the eyemovement data with the stimulus.
 #
 # \note the client must implement the onCustomPaint() function
-class StimulusWidget(QtGui.QWidget):
+class StimulusWidget(QtWidgets.QWidget):
     
     ##
     # initializes a StimulusWidget
@@ -128,7 +128,7 @@ class StimulusWidget(QtGui.QWidget):
         if pixmap:
             painter.drawPixmap(pixmap.rect(), pixmap, pixmap.rect())
         else:
-            print "No pixmap loaded"
+            print("No pixmap loaded")
         
         # Let the derived widget do the other painting
         self.onCustomPaint(painter)

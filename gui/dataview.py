@@ -8,10 +8,10 @@
 # to derive dedicated viewers for special tasks related
 # to eyetracking experiments.
 
-from PyQt4 import QtGui
-from PyQt4 import QtCore
-import datamodel
-import savedialog
+from PyQt5 import QtWidgets
+from PyQt5 import QtCore
+from . import datamodel
+from . import savedialog
 import os
 
 ##
@@ -40,7 +40,7 @@ class CustomDataView(object):
 # by a derived class. The special widget shows the relevant data of that
 # trial or experiment.
 #
-class DataView(QtGui.QWidget):
+class DataView(QtWidgets.QWidget):
     
     ##
     # inits a DataView
@@ -110,28 +110,28 @@ version."
     # files respectively.
     #
     def _initGui(self):
-        grid = QtGui.QGridLayout()
-        tabview = QtGui.QTabWidget()
+        grid = QtWidgets.QGridLayout()
+        tabview = QtWidgets.QTabWidget()
 
         grid.addWidget(self.custom_widget, 0,0, 1, -1)
 
-        button = QtGui.QPushButton('<-')
+        button = QtWidgets.QPushButton('<-')
         button.setToolTip("Previous trial")
         button.clicked.connect(self.prevTrial)
         grid.addWidget(button, 1,0)
 
-        button = QtGui.QPushButton('->')
+        button = QtWidgets.QPushButton('->')
         button.setToolTip("Next trial")
         button.clicked.connect(self.nextTrial)
         grid.addWidget(button, 1, 3)
 
         ## The slider used to navigate throughout the trials.
-        self.fileslider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.fileslider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.fileslider.setMinimum(1)
         self.fileslider.setToolTip("File slider")
 
         ## The slider used to navigate through the trials.
-        self.trialslider= QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.trialslider= QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.trialslider.setMinimum(1)
         self.trialslider.setToolTip("Trial slider")
         
@@ -235,11 +235,12 @@ class EditDataView(DataView):
         ## \todo create a custom filedialog for loading and saving files.
         cur = self.MODEL.getCurrentFileName()
         Dir = os.path.dirname(cur)
-        fn= QtGui.QFileDialog.getSaveFileName(caption          = "Select or enter savefile name.",
-                                              directory        = Dir,
-                                              filter           = "EyeData (*.csv *.asc);;all (*)",
-                                              selectedFilter   = "EyeData"
-                                              )
+        fn, _unused = QtWidgets.QFileDialog.getSaveFileName(
+                caption          = "Select or enter savefile name.",
+                directory        = Dir,
+                filter           = "EyeData (*.csv *.asc);;all (*)",
+                initialFilter    = "EyeData"
+                )
         if fn:
             self.controller.saveExperiment(fn, True)
  

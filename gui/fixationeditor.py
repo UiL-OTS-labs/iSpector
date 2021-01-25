@@ -11,15 +11,16 @@
 
 import time
 import copy
-import datamodel 
-import dataview 
-import stimuluswidget
+import functools
+from . import datamodel 
+from . import dataview 
+from . import stimuluswidget
 import utils 
-from statusmessage import StatusMessage
+from .statusmessage import StatusMessage
 from log.eyelog import LogEntry, FixationEntry, SaccadeEntry, FixationEndEntry
 from utils import space
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtCore
 import os.path as path
 
 import pdb
@@ -74,7 +75,10 @@ class _TranslateFix(object):
 # Used internally to sort fixation base on the distance from 
 # the mouse click
 #
-class _SortOnDistance(object):
+# It is a python3 compatible key function, whereas it was a python2
+# compare function before.
+#
+class _SortOnDistanceKey(object):
 
     ##
     # \param x x-coordinate
@@ -83,13 +87,10 @@ class _SortOnDistance(object):
         self.p = space.Point(x, y)
     
     ##
-    # called to check whether fix1 or to is closer to self.p
-    def __call__(self, fix1, fix2):
-        p1 = space.Point(fix1.x, fix1.y)
-        p2 = space.Point(fix2.x, fix2.y)
-        diff = space.Point.distance(self.p, p1) -\
-               space.Point.distance(self.p, p2)
-        return int(round(diff))
+    # Called to compute key (distance between self.p and p2.
+    def __call__(self, p2):
+        coordinate = space.Point(p2.x, p2.y)
+        return space.Point.distance(self.p, coordinate)
     
 
 ##
@@ -572,15 +573,15 @@ class FixationEditModel(datamodel.EditDataModel):
         for i in self._selected:
             translater  = _TranslateFix(x, y, i)
             if edit.lfix:
-                edit.lfix   = map(translater, edit.lfix)
+                edit.lfix   = list(map(translater, edit.lfix))
             if edit.rfix:
-                edit.rfix   = map(translater, edit.rfix)
+                edit.rfix   = list(map(translater, edit.rfix))
             if edit.avgfix:
-                edit.avgfix = map(translater, edit.avgfix)
+                edit.avgfix = list(map(translater, edit.avgfix))
         
         # also modify the selected.
         translater = _TranslateFix(x, y)
-        map(translater, self._selected)
+        list(map(translater, self._selected))
         if edit.lfix:
             edit.lsac = self.connectFixations(edit.lfix)
         if edit.rfix:
@@ -598,9 +599,7 @@ class FixationEditModel(datamodel.EditDataModel):
         visible = self.getVisible()
         if not visible:
             return None
-        #mappedx, mappedy = self.mapCoordinate((x,y))
-        #visible.sort(_SortOnDistance(mappedx, mappedy))
-        visible.sort(_SortOnDistance(x, y))
+        visible.sort(key=_SortOnDistanceKey(x, y))
         return visible[0]
 
     ##
@@ -679,7 +678,7 @@ class FixationUpdateCanvas(stimuluswidget.StimulusWidget, dataview.CustomDataVie
             if selected:
                 x, y = self.MODEL.getVector()
                 translator      = _TranslateFix(x, y)
-                translatedlist  = map(translator, copy.deepcopy(self.MODEL.getSelected()))
+                translatedlist  = list(map(translator, copy.deepcopy(self.MODEL.getSelected())))
                 self._paintFixations(painter, translatedlist, black, black)
         else:
             pass
@@ -792,7 +791,7 @@ class FixationUpdateCanvas(stimuluswidget.StimulusWidget, dataview.CustomDataVie
 # can select fixations. The right hand plane contains
 # the settings of all fixations and additional information.
 #
-class FixationEditCustomView(QtGui.QWidget, dataview.CustomDataView):
+class FixationEditCustomView(QtWidgets.QWidget, dataview.CustomDataView):
     
     def __init__(self, model, controller):
         super(FixationEditCustomView, self).__init__()
@@ -803,7 +802,7 @@ class FixationEditCustomView(QtGui.QWidget, dataview.CustomDataView):
         self._initGui()
 
     def _initGui(self):
-        box = QtGui.QVBoxLayout()
+        box = QtWidgets.QVBoxLayout()
         self.fixationcanvas = FixationUpdateCanvas(self.MODEL, self._controller)
         box.addWidget(self.fixationcanvas)
 

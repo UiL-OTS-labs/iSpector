@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+from PyQt5 import QtWidgets
+from PyQt5 import QtCore
 
 '''
 This is the Qt application that runs the iSpector mainloop.
 '''
 
-class ISpectorApp(QtGui.QApplication):
+class ISpectorApp(QtWidgets.QApplication):
     ''' Our own app mainly create to catch user events '''
 
     def notify(self, receiver, event):

@@ -4,20 +4,20 @@
 from log.eyedata import *
 from log.eyeexperiment import *
 from log.parseeyefile import *
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtCore
 
-import inspecteyedataview
+from . import inspecteyedataview
 from gui import datamodel
-import statusmessage as sm
+from . import statusmessage as sm
 import sys
 import os
 import os.path as p
-import ievent
-import statusbox
+from . import ievent
+from . import statusbox
 import utils.configfile
 import iSpectorVersion
-import fixationeditor
+from . import fixationeditor
 
 
 LOGO = "iSpectorLogo.svg"
@@ -193,7 +193,7 @@ class Controller :
         self.model.set_files(list(sorted(newset)))
 
 
-class DirGroup (QtGui.QGroupBox):
+class DirGroup (QtWidgets.QGroupBox):
     """
     The dirgroup handles all directories that are useful for
     The program.
@@ -202,19 +202,19 @@ class DirGroup (QtGui.QGroupBox):
         super(DirGroup, self).__init__("Directories")
         self.controller = controller
         self.MODEL      = model
-        self.grid       = QtGui.QGridLayout()
+        self.grid       = QtWidgets.QGridLayout()
         self.mainwindow = mainwindow
         self._init()
 
     def _init(self):
-        verticalbox = QtGui.QVBoxLayout()
+        verticalbox = QtWidgets.QVBoxLayout()
         self.setLayout(verticalbox)
         
         # Adding widgets to select the output directory
-        self.outdirlabel    = QtGui.QLabel("Output directory:")
+        self.outdirlabel    = QtWidgets.QLabel("Output directory:")
         self.outdiropenicon = QtGui.QIcon.fromTheme("folder")
-        self.outdirbutton   = QtGui.QPushButton(self.outdiropenicon, "open")
-        self.outdirbox      = QtGui.QHBoxLayout()
+        self.outdirbutton   = QtWidgets.QPushButton(self.outdiropenicon, "open")
+        self.outdirbox      = QtWidgets.QHBoxLayout()
         
         # Setting tooltips and adding the directory widgets to the directory HBox
         self.outdirbutton.setToolTip("Select directory to write the output to.")
@@ -222,10 +222,10 @@ class DirGroup (QtGui.QGroupBox):
         self.outdirbox.addWidget(self.outdirbutton)
         
         # Adding widgets to select the output directory
-        self.stimdirlabel   = QtGui.QLabel("Stimulus directory:")
+        self.stimdirlabel   = QtWidgets.QLabel("Stimulus directory:")
         self.stimdiropenicon= QtGui.QIcon.fromTheme("folder")
-        self.stimdirbutton  = QtGui.QPushButton(self.stimdiropenicon, "open")
-        self.stimdirbox     = QtGui.QHBoxLayout()
+        self.stimdirbutton  = QtWidgets.QPushButton(self.stimdiropenicon, "open")
+        self.stimdirbox     = QtWidgets.QHBoxLayout()
 
         # Setting tooltips and adding the directory widgets to the directory HBox
         self.stimdirbutton.setToolTip("Select directory to search for stimuli.")
@@ -256,7 +256,7 @@ class DirGroup (QtGui.QGroupBox):
     def _openOutDir(self):
         """ Shows the file dialog to choose a new dir. """
         d   = self.MODEL.output_dir()
-        folder = QtGui.QFileDialog.getExistingDirectory(
+        folder = QtWidgets.QFileDialog.getExistingDirectory(
                                                caption          = "Select output directory",
                                                directory        = d
                                                )
@@ -267,7 +267,7 @@ class DirGroup (QtGui.QGroupBox):
     def _openStimDir(self):
         """ Shows the file dialog to choose a new dir. """
         d   = self.MODEL.stimulus_dir()
-        folder = QtGui.QFileDialog.getExistingDirectory(
+        folder = QtWidgets.QFileDialog.getExistingDirectory(
                                                caption          = "Select stimulus directory",
                                                directory        = d
                                                )
@@ -276,7 +276,7 @@ class DirGroup (QtGui.QGroupBox):
         self.updateFromModel()
 
 
-class OptionGroup(QtGui.QGroupBox):
+class OptionGroup(QtWidgets.QGroupBox):
     """
     Option group contains mainly the parameters to control
     the detection of fixations and saccades. It
@@ -306,7 +306,7 @@ class OptionGroup(QtGui.QGroupBox):
         super(OptionGroup, self).__init__("Options")
         self.controller = controller
         self.MODEL      = model
-        self.grid       = QtGui.QGridLayout()
+        self.grid       = QtWidgets.QGridLayout()
         self.mainwindow = mainwindow
         self._init()
 
@@ -348,16 +348,16 @@ class OptionGroup(QtGui.QGroupBox):
         """
         self.setFlat(False)
         self.setLayout(self.grid)
-        self._addLabel(u"Action:",      0, 0)
-        self._addLabel(u"Inspect/Extract eye:", 1, 0)
-        self._addLabel(u"Smooth:",      2, 0)
-        self._addLabel(u"Smoothwindow:",3, 0)
-        self._addLabel(u"Smoothorder:", 4, 0)
-        self._addLabel(u"Threshold:",   5, 0)
-        self._addLabel(u"NThreshold:",  6, 0)
+        self._addLabel("Action:",      0, 0)
+        self._addLabel("Inspect/Extract eye:", 1, 0)
+        self._addLabel("Smooth:",      2, 0)
+        self._addLabel("Smoothwindow:",3, 0)
+        self._addLabel("Smoothorder:", 4, 0)
+        self._addLabel("Threshold:",   5, 0)
+        self._addLabel("NThreshold:",  6, 0)
         
         # A combobox that sets the main action of the program.
-        combo = QtGui.QComboBox()
+        combo = QtWidgets.QComboBox()
         combo.setToolTip(self.actiontip)
         combo.addItems(MainGuiModel.VALID_ACTIONS)
         combo.activated.connect(self._handle)
@@ -365,7 +365,7 @@ class OptionGroup(QtGui.QGroupBox):
         self.actioncombo = combo
         
         # Select the eye(s) to inspect or extract.
-        combo = QtGui.QComboBox()
+        combo = QtWidgets.QComboBox()
         combo.setToolTip(self.eyetip)
         combo.addItems(["left", "right", "both"])
         combo.activated.connect(self._handle)
@@ -373,7 +373,7 @@ class OptionGroup(QtGui.QGroupBox):
         self.eyecombo = combo
 
         # Allow the user to select smoothing via this checkbox.
-        checkbox = QtGui.QCheckBox()
+        checkbox = QtWidgets.QCheckBox()
         checkbox.setToolTip(self.smoothtip)
         checkbox.stateChanged.connect(self._handle)
         self.grid.addWidget(checkbox, 2, 1)
@@ -381,7 +381,7 @@ class OptionGroup(QtGui.QGroupBox):
 
         # Allow the user to select a smoothing window size
         # all windowsizes are valid.
-        combo = QtGui.QComboBox()
+        combo = QtWidgets.QComboBox()
         combo.setToolTip(self.smoothwintip)
         combo.addItems([str(i) for i in range(3,21, 2)])
         combo.activated.connect(self._handle)
@@ -390,7 +390,7 @@ class OptionGroup(QtGui.QGroupBox):
 
         # Let the user select a valid smooting order
         # for the Savitsky-golay filter.
-        combo = QtGui.QComboBox()
+        combo = QtWidgets.QComboBox()
         combo.setToolTip(self.smoothordertip)
         combo.addItems(["1", "2", "3", "4", "5"])
         combo.activated.connect(self._handle)
@@ -398,7 +398,7 @@ class OptionGroup(QtGui.QGroupBox):
         self.ordercombo = combo
 
         # Let the user select the method to set the base threshold.
-        combo = QtGui.QComboBox()
+        combo = QtWidgets.QComboBox()
         combo.setToolTip(self.thresholdtip)
         combo.addItems(["median", "mean"])
         combo.activated.connect(self._handle)
@@ -407,7 +407,7 @@ class OptionGroup(QtGui.QGroupBox):
 
         # allow the user to express a factor to select the final threshold
         # So the final threshold = base threshold * the value they enter here.
-        entry = QtGui.QLineEdit()
+        entry = QtWidgets.QLineEdit()
         validator = QtGui.QDoubleValidator()
         validator.setNotation(QtGui.QDoubleValidator.StandardNotation)
         validator.setRange(0, 99, 4)
@@ -433,7 +433,7 @@ class OptionGroup(QtGui.QGroupBox):
     
     def _addLabel(self, string, row , column, rowspan=1, heightspan=1):
         """ utility to add labels to the layout """
-        label = QtGui.QLabel(string)
+        label = QtWidgets.QLabel(string)
         self.grid.addWidget(label, row, column, rowspan, heightspan)
         label.show()
 
@@ -471,7 +471,7 @@ class OptionGroup(QtGui.QGroupBox):
         self.nthresholdentry.setText(str(self.MODEL[self.MODEL.NTHRESHOLD]))
 
 
-class FileEntry(QtGui.QListWidgetItem):
+class FileEntry(QtWidgets.QListWidgetItem):
     """ FileEntry can be cast to string. It displays the
         filename, but keeps the directory in mind.
     """
@@ -486,7 +486,7 @@ class FileEntry(QtGui.QListWidgetItem):
         """ Create absolute pathname. """
         return p.join(self.directory, self.fname)
 
-class FileEntryList(QtGui.QListWidget) :
+class FileEntryList(QtWidgets.QListWidget) :
     """
     Handles delete keypress to remove one entry from
     the model and view.
@@ -499,7 +499,7 @@ class FileEntryList(QtGui.QListWidget) :
         if e.key() == QtCore.Qt.Key_Delete:
             self.view.removeSelected()
 
-class InputOutput(QtGui.QVBoxLayout) :
+class InputOutput(QtWidgets.QVBoxLayout) :
     """
     InputOutput helps to display the files used
     as input for the fixation dectection algorithms
@@ -508,8 +508,8 @@ class InputOutput(QtGui.QVBoxLayout) :
     directory.
     """
 
-    FILTERS     = u"EyeData (*.csv *.asc);;all (*)"
-    EYE_FILT    = u"EyeData"
+    FILTERS     = "EyeData (*.csv *.asc);;all (*)"
+    EYE_FILT    = "EyeData"
     
     def __init__(self, controller, model):
         """ initializes model, controller and finally the gui elements"""
@@ -521,11 +521,11 @@ class InputOutput(QtGui.QVBoxLayout) :
 
     def _init(self):
         """ Initializes the gui elements """
-        label = QtGui.QLabel("Input files:")
+        label = QtWidgets.QLabel("Input files:")
         self.addWidget(label)
 
-        self.fileviewwidget = FileEntryList(self)#QtGui.QListWidget()
-        self.fileviewwidget.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+        self.fileviewwidget = FileEntryList(self)#QtWidgets.QListWidget()
+        self.fileviewwidget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.fileviewwidget.itemSelectionChanged.connect(self.onSelection)
         self.addWidget(self.fileviewwidget)
         
@@ -538,11 +538,12 @@ class InputOutput(QtGui.QVBoxLayout) :
     def _openFiles(self):
         """ This opens files, and updates the data model. """
         d = self.MODEL.file_dir()
-        l = QtGui.QFileDialog.getOpenFileNames(caption          = "Select input file(s)",
-                                               directory        = d,
-                                               filter           = self.FILTERS,
-                                               selectedFilter   = self.EYE_FILT
-                                               )
+        l, _filt = QtWidgets.QFileDialog.getOpenFileNames(
+                caption         = "Select input file(s)",
+                directory       = d,
+                filter          = self.FILTERS,
+                initialFilter   = self.EYE_FILT
+                )
         if l:
             self.controller.updateFiles(l)
             path = str(l[0])
@@ -582,7 +583,7 @@ class InputOutput(QtGui.QVBoxLayout) :
 #
 # \note ispector actually started as a terminal program instead of a gui
 #       some things just keep expanding :D!!
-class ISpectorGui(QtGui.QMainWindow):
+class ISpectorGui(QtWidgets.QMainWindow):
 
     ## window title, can still be improved
     _WINDOW_TITLE = iSpectorVersion.getVersion() +\
@@ -610,10 +611,10 @@ class ISpectorGui(QtGui.QMainWindow):
         self.setWindowIcon(QtGui.QIcon(LOGO))
 
         # Adding main widget to the window
-        centralwidget = QtGui.QWidget(self)
+        centralwidget = QtWidgets.QWidget(self)
         self.setCentralWidget(centralwidget)
         ## a grid to layout all other widgets.
-        self.grid = QtGui.QGridLayout()
+        self.grid = QtWidgets.QGridLayout()
         self.grid.setColumnStretch(1, 1)
         self.grid.setColumnStretch(0,10)
         centralwidget.setLayout(self.grid)
@@ -634,27 +635,27 @@ class ISpectorGui(QtGui.QMainWindow):
         self.grid.addLayout(self.files, 0, 0, 2,1, QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
 
         ## The action button to start the iSpector action.
-        self.actionbutton = QtGui.QPushButton("")
+        self.actionbutton = QtWidgets.QPushButton("")
         self.actionbutton.clicked.connect(self.doAction)
         self.grid.addWidget(self.actionbutton, 3, 1, alignment=QtCore.Qt.AlignRight)
 
         ## The box wherein status messages are displayed.
         self.statusbox = statusbox.StatusBox()
-        templayout = QtGui.QVBoxLayout();
-        templabel = QtGui.QLabel("Status messages: ")
+        templayout = QtWidgets.QVBoxLayout();
+        templabel = QtWidgets.QLabel("Status messages: ")
         templayout.addWidget(templabel)
         templayout.addWidget(self.statusbox)
         self.grid.addLayout(templayout, 2, 0, 1, 2)
 
         # create exit handeling and keyboard short cuts.
         icon        = QtGui.QIcon.fromTheme("window-close")
-        exitAction  = QtGui.QAction(icon, '&Exit', self)
+        exitAction  = QtWidgets.QAction(icon, '&Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setStatusTip('Exit application')
-        exitAction.triggered.connect(QtGui.qApp.quit)
+        exitAction.triggered.connect(QtWidgets.qApp.quit)
 
         icon        = QtGui.QIcon.fromTheme("document-open")
-        openAction  = QtGui.QAction(icon, '&Open', self)
+        openAction  = QtWidgets.QAction(icon, '&Open', self)
         openAction.setShortcut('Ctrl+O')
         openAction.setStatusTip('Open file(s)')
         openAction.triggered.connect(self.files._openFiles)
@@ -699,7 +700,7 @@ class ISpectorGui(QtGui.QMainWindow):
     def reportStatus(self, status, message):
         status =  sm.StatusMessage(status, message)
         event = ievent.StatusEvent(status)
-        QtGui.QApplication.postEvent(self, event)
+        QtWidgets.QApplication.postEvent(self, event)
 
     ##
     # Read the model and update the view.
@@ -775,11 +776,13 @@ class ISpectorGui(QtGui.QMainWindow):
         if p.exists(absoutput):
             msg = ("The file \"" + absoutput  + "\"already exits.\n"
                    "Do you want to overwrite it?")
-            dlg = QtGui.QMessageBox(QtGui.QMessageBox.Warning,
-                                    "File exits",
-                                    msg,
-                                    QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
-            if dlg.exec_() == QtGui.QMessageBox.Cancel:
+            dlg = QtWidgets.QMessageBox(
+                    QtWidgets.QMessageBox.Warning,
+                    "File exits",
+                    msg,
+                    QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
+                    )
+            if dlg.exec_() == QtWidgets.QMessageBox.Cancel:
                 return None
         return absoutput
 
@@ -795,23 +798,24 @@ class ISpectorGui(QtGui.QMainWindow):
             entries = pr.getEntries()
             if not entries:
                 # add error info to gui 
-                dlg = QtGui.QMessageBox(QtGui.QMessageBox.Critical,
+                dlg = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Critical,
                                         "Parse Error",
                                         "Unable to parse \"" + fname + "\"",
-                                        QtGui.QMessageBox.Ok)
+                                        QtWidgets.QMessageBox.Ok
+                                        )
                 dlg.exec_()
                 continue
 
-            entries = LogEntry.removeEyeEvents(entries)
+            entries = list(LogEntry.removeEyeEvents(entries))
 
             # Optionally filter right or left gaze from the experiment
             if      (self.MODEL[self.MODEL.EXTRACT_RIGHT] and self.MODEL[self.MODEL.EXTRACT_LEFT]) or\
                     (not self.MODEL[self.MODEL.EXTRACT_LEFT] and not self.MODEL[self.MODEL.EXTRACT_RIGHT]):
                 pass # If both are specified or if none are specified extract both eyes
             elif self.MODEL[self.MODEL.EXTRACT_LEFT]:
-                entries = LogEntry.removeRightGaze(entries)
+                entries = list(LogEntry.removeRightGaze(entries))
             elif self.MODEL[self.MODEL.EXTRACT_RIGHT]:
-                entries = LogEntry.removeLeftGaze(entries)
+                entries = list(LogEntry.removeLeftGaze(entries))
             else:
                 raise RuntimeError("The control flow shouldn't get here.")
 

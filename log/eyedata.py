@@ -10,17 +10,13 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.misc import imread
-try :
-    from scipy.stats import nanmean
-    from scipy.stats import nanmedian
-except ImportError:
-    from numpy import nanmean
-    from numpy import nanmedian
+from imageio import imread
+from numpy import nanmean
+from numpy import nanmedian
 
 import scipy as sp
 from utils.tempsignal import savitzky_golay #newer version of scipy provide there own version
-from eyelog import *
+from .eyelog import *
 
 ##
 # Generator to extract X coordinates
@@ -285,7 +281,7 @@ class EyeData:
                 ## the mean velocity of the left eye signal
                 self.meanvelol=nanmean(self.velol)
             except FloatingPointError as e:
-                print self.velol
+                print(self.velol)
                 exit(e)
         else:
             self.meanvelol=float('nan')
@@ -295,7 +291,7 @@ class EyeData:
                 ## the mean velocity of the right eye signal
                 self.meanvelor=nanmean(self.velor)
             except FloatingPointError as e:
-                print self.velor
+                print(self.velor)
                 exit(e)
         else:
             self.meanvelor=float('nan')
@@ -367,11 +363,11 @@ class EyeData:
                 rightsnr = nan
             if self.hasRightGaze():
                 if not (rightsnr > 0):
-                    print self.velor, rightsnr, self.meanvelor
+                    print(self.velor, rightsnr, self.meanvelor)
                     raise ValueError('We have gazedata but are unable to calculate a snr')
             if self.hasLeftGaze():
                 if not (leftsnr > 0):
-                    print self.velol, leftsnr, self.meanvelol
+                    print(self.velol, leftsnr, self.meanvelol)
                     raise ValueError('We have gazedata but are unable to calculate a snr')
             self.threshold = leftsnr, rightsnr
         else:
@@ -408,7 +404,7 @@ class EyeData:
         elif entrytype == LogEntry.LFIX:
             et = LogEntry.LSAC
         else:
-            raise Valuerror("entry type should be LogEntry.LFIX or LogEntry.RFIX")
+            raise ValuError("entry type should be LogEntry.LFIX or LogEntry.RFIX")
 
         # loop over fixations if in between fixations are nans don't consider
         # it to be a saccade
@@ -542,7 +538,7 @@ class EyeData:
             duration = end - start
             boolvec = np.logical_and(gazetimes >= start, gazetimes <= end)
             if (duration < 0):
-                raiseValueError("Endtime before start time")
+                raise ValueError("Endtime before start time")
             meanx = sp.mean(xgaze[boolvec])
             meany = sp.mean(ygaze[boolvec])
             fixations.append(

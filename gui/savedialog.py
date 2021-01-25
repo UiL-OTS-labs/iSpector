@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+from PyQt5 import QtWidgets
+from PyQt5 import QtCore
 
-class SaveDialog (QtGui.QMessageBox):
+class SaveDialog (QtWidgets.QMessageBox):
     
     _msg     = ("You have made modifications, "
                 "would you like to save the experiment?"
                 )
     _title   = "Save Experiment"
-    _present_buttons = QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard | \
-                       QtGui.QMessageBox.Cancel
+    _present_buttons = QtWidgets.QMessageBox.Save |     \
+                       QtWidgets.QMessageBox.Discard |  \
+                       QtWidgets.QMessageBox.Cancel
     
     def __init__(self):
         super(SaveDialog, self).__init__()

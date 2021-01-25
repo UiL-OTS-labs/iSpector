@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''
 This script is a utility to get the current iSpector version, and to modify it.
 The script reads iSpectorVersion.py and modifies it. This program should modify
@@ -180,7 +180,7 @@ if __name__ == "__main__":
 
     ns = ap.parse_args()
     getVersionInfo()
-    print "Current version: " + getVersion()
+    print("Current version: " + getVersion())
 
     bump    = ns.major or ns.minor or ns.micro
     setting = ns.set_major >= 0 or ns.set_minor >= 0 or ns.set_micro >= 0
@@ -204,4 +204,4 @@ if __name__ == "__main__":
     # write to output
     if bump or setting:
         updateVersioningFiles();
-        print "New version: " + getVersion()
+        print("New version: " + getVersion())

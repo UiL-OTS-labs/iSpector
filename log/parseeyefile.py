@@ -8,7 +8,7 @@
 #
 
 import re
-from eyelog import *
+from .eyelog import *
 import gui.statusmessage as sm 
 
 ##
@@ -67,7 +67,7 @@ def getLogEntry(splitline):
                              stripped_string
                              )
     else:
-        raise ValueError("Line: \"" + LogEntry.SEPARATOR.join(splitline) +
+        raise ValueError("Line: \"" + LogEntry.SEP.join(splitline) +
                                       "\" is invalid")
     return entry
 
@@ -147,8 +147,8 @@ def extractAscLog(lines):
                 logentries.append(rgaze)
             except ValueError as v:
                 import traceback
-                print i
-                print traceback.print_exc()
+                print(i)
+                print(traceback.print_exc())
             continue
         m = sampleformat.search(i)
         if m:
@@ -241,7 +241,7 @@ class ParseResult:
     # Set a list of errors to the error list.
     # list of tuples of (string, StatusMessage.OK or StatusMessage.error or StatusMessage.warning)
     def setErrors(self, errorlist):
-        self.errorlist
+        self.errors = errorlist
     
     ##
     # appendErrors(to the list)

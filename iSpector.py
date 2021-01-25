@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ##
 # \file iSpector.py The entry point for iSpector
@@ -44,7 +44,7 @@ from gui.ispectorgui import ISpectorGui
 from gui.ispectorgui import MainGuiModel
 import gui.statusmessage as sm
 from gui.app import ISpectorApp
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 import sys
 
 def main():

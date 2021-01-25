@@ -233,7 +233,7 @@ class DataModel(object):
     def showAvg(self):
         MM = self._MAINWIN.getModel()[0]
         ret = False
-        print self, "enable avg eye in main model"
+        print(self, "enable avg eye in main model")
         return ret
         return MM[MM.EXTRACT_AVG]
 

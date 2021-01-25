@@ -6,31 +6,31 @@
 # \todo make it possible to compare fixations
 
 import numpy as np
-from scipy.misc import imread
+from imageio import imread
 import scipy as sp
 
 #import arguments as cmdargs
 import os.path
 from log.eyeexperiment import EyeExperiment
 from log.parseeyefile import parseEyeFile
-from log.eyedata import EyeData 
+from log.eyedata import EyeData
 from log.eyelog import LogEntry
-import datamodel as dm
-import dataview  as dv
-import statusmessage as sm
-import utils.configfile 
+from . import datamodel as dm
+from . import dataview  as dv
+from . import statusmessage as sm
+import utils.configfile
 
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtWidgets, QtCore
 
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-# Apparently NavigationToolbar2QTAgg is renamed in newer versions 
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+# Apparently NavigationToolbar2QTAgg is renamed in newer versions
 # so much for backward compatibility...
 try :
-    from matplotlib.backends.backend_qt4agg import\
+    from matplotlib.backends.backend_qt5agg import\
             NavigationToolbar2QTAgg as NavigationBar
 except ImportError as e:
-    from matplotlib.backends.backend_qt4agg import\
+    from matplotlib.backends.backend_qt5agg import\
             NavigationToolbar2QT as NavigationBar
 
 from matplotlib.figure import Figure
@@ -68,7 +68,6 @@ def gcd_iter(u, v):
 # one for the Y component and one for the velocity component
 #
 class SignalPlotWidget(FigureCanvas):
-    
     ##
     # Construct a SignalPlotWidget
     #
@@ -107,22 +106,31 @@ class SignalPlotWidget(FigureCanvas):
     # \param xgaze numpy array with the x gaze signal
     # \param ygaze numpy array with the y gaze signal
     # \param velo numpy array with the velocity of the eye
-    # \param time the times that belong to the 
+    # \param time the times that belong to the
     # \param threshold a value that represents the treshold between a fixation
     #        and a saccade
     # \param linestyle the linestyle that will be used for the signal.
     # \param thresholdstyle the linestyle for the threshold.
-    def plotData(self, xgaze, ygaze, velo, time, threshold, linestyle=_leftl, thresholdstyle=_thresholdl):
-        self.axgazex.hold(False)
-        self.axgazey.hold(False)
-        self.axvelo.hold(False)
+    def plotData(
+            self,
+            xgaze,
+            ygaze,
+            velo,
+            time,
+            threshold,
+            linestyle=_leftl,
+            thresholdstyle=_thresholdl
+            ):
+        #self.axgazex.hold(False)
+        #self.axgazey.hold(False)
+        #self.axvelo.hold(False)
         self.axgazex.plot(time, xgaze, linestyle)
         self.axgazey.plot(time, ygaze, linestyle)
         self.axvelo.plot(time[0:len(velo)], velo, linestyle)
-        self.axgazex.hold(True)
-        self.axgazey.hold(True)
-        self.axvelo.hold(True)
-        
+        #self.axgazex.hold(True)
+        #self.axgazey.hold(True)
+        #self.axvelo.hold(True)
+
         # create threshold
         timestart = time[0]
         timeend   = time[len(time)-1]
@@ -130,6 +138,7 @@ class SignalPlotWidget(FigureCanvas):
         self.axvelo
         self.setLabels()
         self.axvelo.plot(time, thres, thresholdstyle)
+
     ##
     # clears the all axis
     def clear(self):
@@ -157,7 +166,15 @@ class SignalPlotWidget(FigureCanvas):
 
     ##
     # Plot marks where saccades start and end.
-    def plotSaccades(self, sacvec, xgaze, ygaze, times, startsacstyle=_startsac, endsacstyle=_endsac):
+    def plotSaccades(
+            self,
+            sacvec,
+            xgaze,
+            ygaze,
+            times,
+            startsacstyle=_startsac,
+            endsacstyle=_endsac
+            ):
         boolvecstart = sacvec == EyeData._sf
         boolvecend   = sacvec == EyeData._ef
 
@@ -176,7 +193,7 @@ class SignalPlotWidget(FigureCanvas):
 # over the visual stimulus if it is present.
 #
 class GazePlotWidget(FigureCanvas):
-    
+
     ##
     # Inits the gaze plot widget
     #
@@ -189,7 +206,7 @@ class GazePlotWidget(FigureCanvas):
         self.setParent(parent)
 
         self.axgaze = self.fig.add_subplot(111)
-    
+
     ##
     # clear the plot/axis
     def clear(self):
@@ -207,30 +224,38 @@ class GazePlotWidget(FigureCanvas):
     # \param ry right eye y coordinate
     #
     # \return A caught exception or None if no error occured.
-    def plotGazePicture(self, picture, stimdir=None, lx=None, ly=None, rx=None, ry=None):
+    def plotGazePicture(
+            self,
+            picture,
+            stimdir=None,
+            lx=None,
+            ly=None,
+            rx=None,
+            ry=None
+            ):
         img = None
         abspath = None
         e1 = None
-        self.axgaze.hold(False)
+        #self.axgaze.hold(False)
         self.clear()
 
         if stimdir:
             abspath = os.path.join(stimdir, picture)
-            self.axgaze.hold(True)
+            #self.axgaze.hold(True)
         if stimdir:
             try:
                 # try absolute path
                 img = imread(abspath)
-            except IOError as e1:
-                pass
+            except IOError as temperror:
+                e1 = temperror
 
-        if img == None:
+        if img is None:
             try:
                 img = imread(picture)
-            except IOError as e1:
-                pass
+            except IOError as temperror:
+                e1 = temperror
 
-        if img == None:
+        if img is None:
             msg = "Unable to load: " + picture + "Did you set the stimulus directory?"
             p = self
             last = None
@@ -238,7 +263,7 @@ class GazePlotWidget(FigureCanvas):
                 last = p
                 p = p.parent()
             last.reportStatus(sm.StatusMessage.warning, msg)
-            
+
         else:
             s = img.shape
             g = gcd_iter(s[0], s[1])
@@ -247,14 +272,13 @@ class GazePlotWidget(FigureCanvas):
             self.axgaze.set_xlim(0, s[1])
             self.axgaze.imshow(img, zorder=0, interpolation='nearest')
             #self.figure.figaspect(img.size)
-        
+
         if not lx is None and not ly is None:
             self.axgaze.plot(lx, ly, _leftl, zorder=1)
-            self.axgaze.hold(True)
+            #self.axgaze.hold(True)
         if not rx is None and not ry is None:
             self.axgaze.plot(rx, ry, _rightl, zorder=1)
-            self.axgaze.hold(True)
-
+            #self.axgaze.hold(True)
         return e1
 
 ##
@@ -265,7 +289,7 @@ class GazePlotWidget(FigureCanvas):
 # one for the Y component and one for the velocity component
 #
 class PupilPlotWidget(FigureCanvas):
-    
+
     ##
     # Construct a PupilPlotWidget
     #
@@ -307,8 +331,8 @@ class PupilPlotWidget(FigureCanvas):
 # Displays a tabbed window with multiple signals
 #
 # This is the CustomDataView of InspectDataView.
-class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
-    
+class TabbedSignalView(dv.CustomDataView, QtWidgets.QWidget):
+
     ## tile for the tab of the left eye
     LEFT_EYE_STR   = "left eye signal"
     ## tile for the tab of the right eye
@@ -337,9 +361,9 @@ class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
     def _initGui(self):
         # create a layout witout spacing
         # and add the layout to the widget
-        layout = QtGui.QVBoxLayout()
+        layout = QtWidgets.QVBoxLayout()
         layout.setSpacing(0)
-        tabview = QtGui.QTabWidget(parent=self)
+        tabview = QtWidgets.QTabWidget(parent=self)
         ## a QTabWidget
         self.tabview = tabview
         layout.addWidget(tabview)
@@ -351,7 +375,7 @@ class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
         self.tabview.addTab(self._createPlotVBox(self.lsignal, toolbar),
                             self.LEFT_EYE_STR
                             )
-        
+
         ## A SignalPlotWidget for the right eye.
         self.rsignal = SignalPlotWidget()
         toolbar = NavigationBar(self.rsignal, self)
@@ -365,7 +389,7 @@ class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
         self.tabview.addTab(self._createPlotVBox(self.gazeplot, toolbar),
                             self.GAZE_PLOT_STR
                             )
-        
+
         ## A PupilPlotWidget that shows the pupilsize over time
         self.pupilplot = PupilPlotWidget()
         toolbar = NavigationBar(self.pupilplot, self)
@@ -379,8 +403,8 @@ class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
     # This function helps creating such a widget with embedded Matplotlib canvas and toolbar
     # in a QVBoxLayout.
     def _createPlotVBox(self, widget, toolbar):
-        w = QtGui.QWidget()
-        l = QtGui.QVBoxLayout()
+        w = QtWidgets.QWidget()
+        l = QtWidgets.QVBoxLayout()
         l.addWidget(widget, 10)
         l.addWidget(toolbar, 0, QtCore.Qt.AlignLeft)
         w.setLayout(l)
@@ -396,7 +420,7 @@ class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
     # Repaints all four plots
     #
     def updatePlots(self):
-        assert(self.MODEL.eyedata)
+        assert self.MODEL.eyedata
         ed      = self.MODEL.eyedata
         trial   = self.MODEL.trials[self.MODEL.trialindex]
         MM      = self.MAINWINDOW.getModel()[0] #ignore the controller
@@ -408,13 +432,13 @@ class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
             times = lt
         else:
             times = rt
-        
+
         fixl, fixr  = ed.getFixVecs()
         sacl, sacr  = ed.getSacVecs()
 
         if ed.hasLeftGaze():
             x,y = ed.getLeft()
-            v   = ed.getLeftVelocity()         
+            v   = ed.getLeftVelocity()
             self.lsignal.plotData(x, y, v, times, thresl, _leftl)
             if MM[MM.SMOOTH]:
                 sv = ed.getLeftVelocity(True)
@@ -427,7 +451,7 @@ class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
             self.lsignal.clear()
         if ed.hasRightGaze():
             x,y = ed.getRight()
-            v   = ed.getRightVelocity()         
+            v   = ed.getRightVelocity()
             self.rsignal.plotData(x, y, v, times, thresr, _rightl)
             if MM[MM.SMOOTH]:
                 sv = ed.getRightVelocity(True)
@@ -457,12 +481,16 @@ class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
         super(TabbedSignalView, self).showEvent(event)
         margins = self.getContentsMargins()
         lay = self.layout()
-        print "in show event with margins is {0} layout.spacing = {1}".format(str(margins), str(lay.spacing()))
-        
+        print(
+            "in show event with margins is {0} layout.spacing = {1}".format(
+                str(margins), str(lay.spacing())
+                )
+            )
+
 
 ##
 # Display a the EyeData of a number of files
-# 
+#
 # The InspectEyeDataView is a widget that helps inspecting the
 # the Signals of the eye movement. The Signal is split in a
 # X signal, a Y signal and over those two signals the velocity
@@ -475,9 +503,9 @@ class TabbedSignalView(dv.CustomDataView, QtGui.QWidget):
 # of the data. Also it is helpfull in determining the most proper
 # values for the smoothing parameters, so you can see what
 # fixations iSpector will determine in the signal.
-# 
+#
 class InspectEyeDataView(dv.DataView):
-    
+
     ##
     # inits the InspectEyeDataView and checks whether the data is valid.
     #
@@ -491,14 +519,14 @@ class InspectEyeDataView(dv.DataView):
                                                  )
         if not self.hasValidData():
             model.getMainWindow().reportStatus(StatusMessage.error, "Invalid Data...")
-            QtGui.QApplication.postEvent(self, QtGui.QCloseEvent())
+            QtWidgets.QApplication.postEvent(self, QtWidgets.QCloseEvent())
             return
-    
+
     ##
     # test whether the model contains valid data
     def hasValidData(self):
         return self.MODEL.hasValidData()
-    
+
     ##
     # this creates the tabbed signal view widget
     def initCustomWidget(self):
@@ -506,5 +534,3 @@ class InspectEyeDataView(dv.DataView):
         # custom_widget is a TabbedSignalView that allows inspection of
         # eyedata.
         self.custom_widget = TabbedSignalView(self.MODEL)
-
-
