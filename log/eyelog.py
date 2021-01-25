@@ -6,14 +6,14 @@
 #
 
 import itertools
+import functools
 from abc import abstractmethod
 from abc import ABCMeta
-import re
 
 ##
-#An abstract base class for all LogEntries in an eyelog. 
-class LogEntry (object, metaclass=ABCMeta):
-    
+#An abstract base class for all LogEntries in an eyelog.
+class LogEntry (metaclass=ABCMeta):
+
     ## LogEntry contains functions from a ABCMeta classes
     LGAZE       = 0
     ## Entry that describes a right gaze sample
@@ -33,13 +33,13 @@ class LogEntry (object, metaclass=ABCMeta):
 
     # extended types these don't belong to a log, but can be handy for unhandy formats
     # that log a end event, or do some other marking like Begin and end
-    
+
     ## Is a gaze in a eyelink asc log
     ASCGAZE = 8
     ## Is a Eyelink fixation end in a asc log of the left eye
     FIXENDL = 9
     ## Is a Eyelink fixation end in a asc log of the right eye
-    FIXENDR = 10 
+    FIXENDR = 10
     ## Is a saccade end in an asc log of the left eye.
     SACCENDL= 11
     ## Is a saccade end in an asc log of the right eye.
@@ -51,7 +51,7 @@ class LogEntry (object, metaclass=ABCMeta):
 
     ## The separator used to separate columns.
     SEP     = '\t'
-    
+
     ## Construct an instance of LogEntry
     #
     # @param entrytype defines what kind of log entry this is.
@@ -68,12 +68,12 @@ class LogEntry (object, metaclass=ABCMeta):
     ## Compares for object equality
     def __eq__(self, other):
         return type(self) is type(other) and self.__dict__ == other.__dict__
-    
-    ## Compares for object difference 
+
+    ## Compares for object difference
     def __ne__(self, other):
         return not self == other
 
-    ## This marks the timepoint in milliseconds when 
+    ## This marks the timepoint in milliseconds when
     def getEyeTime(self):
         return self.eyetime
 
@@ -91,10 +91,10 @@ class LogEntry (object, metaclass=ABCMeta):
     #
     # @return A string that descibes the event suitable for a eyelink log.
     @abstractmethod
-    def toAsc():
+    def toAsc(self):
         ''' Implement return of string in format as Eyelink edf to ascii does. '''
         pass
-    
+
 #    @abstractmethod
 #    def __str__():
 #        ''' Implement return of string in format as Eyelink edf to ascii does. '''
@@ -104,7 +104,7 @@ class LogEntry (object, metaclass=ABCMeta):
     @staticmethod
     def isLGaze(entry):
         return entry.getEntryType() == LogEntry.LGAZE
-    
+
     ## Returns True if this is a right gaze sample
     @staticmethod
     def isRGaze(entry):
@@ -126,7 +126,7 @@ class LogEntry (object, metaclass=ABCMeta):
     def isSaccade(entry):
         ''' Determines whether a LogEntry is a saccade '''
         return entry.getEntryType() == LogEntry.LSAC or entry.getEntryType() == LogEntry.RSAC
-    
+
     ## Returns True if this is a message entry
     @staticmethod
     def isMessage(entry):
@@ -136,7 +136,7 @@ class LogEntry (object, metaclass=ABCMeta):
     @staticmethod
     def _removeEyeEvents(entry):
         return not (LogEntry.isFixation(entry) or LogEntry.isSaccade(entry))
-    
+
     ##
     # Removes all fixations and saccades from the log.
     #
@@ -145,7 +145,7 @@ class LogEntry (object, metaclass=ABCMeta):
     @staticmethod
     def removeEyeEvents(entries):
         entries = filter(LogEntry._removeEyeEvents, entries)
-        return entries
+        return list(entries)
 
     ## Removes the left gaze entries.
     #
@@ -154,23 +154,23 @@ class LogEntry (object, metaclass=ABCMeta):
     @staticmethod
     def removeLeftGaze(entries):
         filt = lambda e: not e.getEntryType() == LogEntry.LGAZE
-        return filter(filt, entries)
-    
+        return list(filter(filt, entries))
+
     ##
     # Removes the right gaze entries
     #
     # can be used to obtain a list without the right gaze '''
-    # \param entries an iterable 
+    # \param entries an iterable
     @staticmethod
     def removeRightGaze(entries):
         filt = lambda e: not e.getEntryType() == LogEntry.RGAZE
-        return filter(filt, entries)
+        return list(filter(filt, entries))
 
 
 ##
 #This describes a left or right eye gaze sample of the eyetracker.
 class GazeEntry(LogEntry) :
-    
+
     ##
     # construct a GazeEntry
     #
@@ -196,8 +196,8 @@ class GazeEntry(LogEntry) :
 ##
 #An entry in a logfile that logs the gaze compatible for Fixation program(Cozijn)
 class AscGazeEntry(LogEntry):
-    
-    ## 
+
+    ##
     # \param lgaze a GazeEntry for the left eye
     # \param rgaze a GazeEntry for the right eye
     def __init__(self, lgaze, rgaze):
@@ -215,7 +215,7 @@ class AscGazeEntry(LogEntry):
         self.lgaze = lgaze
         ## contains a GazeEntry for the right eye.
         self.rgaze = rgaze
- 
+
     ##
     # Create a string from self in Eyelink ascii format
     def toAsc(self):
@@ -238,7 +238,7 @@ class AscGazeEntry(LogEntry):
 # A fixation is determined by a location on a 2D plane and ,its time
 # and the duration of the fixation.
 class FixationEntry(LogEntry):
-    
+
     ##
     # Init a fixation entry
     #
@@ -260,14 +260,14 @@ class FixationEntry(LogEntry):
     def toAsc(self):
         ssac = ""
         if self.getEntryType() == LogEntry.LFIX:
-            ssac = "SFIX\tL\t" 
+            ssac = "SFIX\tL\t"
         else:
             ssac = "SFIX\tR\t"
         return ssac + str(int(self.getEyeTime()))
 
 ## This class can be used to mark fixation ends in an asc log.
 class FixationEndEntry(LogEntry):
-    
+
     ##
     # @param fixation a valid FixationEntry
     def __init__(self, fixation):
@@ -282,17 +282,17 @@ class FixationEndEntry(LogEntry):
         else:
             raise ValueError("Fixation entry should be initialized with LFIX or RFIX")
         super(FixationEndEntry, self).__init__(entry, time)
-       
+
     ##
     # Create a string from self in Eyelink ascii format
     def toAsc(self):
         efix = ""
         if self.getEntryType() == LogEntry.FIXENDL:
-            efix = "EFIX\tL" 
+            efix = "EFIX\tL"
         elif self.getEntryType() == LogEntry.FIXENDR:
             efix = "EFIX\tR"
         else: raise ValueError("Wrong entry type in FixationEndEntry")
-         
+
         SEP = LogEntry.SEP
         return efix + SEP + str(int(self.fixation.getEyeTime()))+  \
                       SEP + str(int(self.getEyeTime()))         +  \
@@ -304,7 +304,7 @@ class FixationEndEntry(LogEntry):
 ## A logged user defined message in a string.
 #
 class MessageEntry(LogEntry):
-    
+
     ##
     # \param eyetime the time of the message in eyetracking time
     # \param message a used defined string
@@ -367,11 +367,11 @@ class SaccadeEntry(LogEntry):
         else: raise ValueError("Unknown entry type")
         return string
 
-## A marker for saccade end in a Eyelink ascii log. 
+## A marker for saccade end in a Eyelink ascii log.
 class SaccadeEndEntry(LogEntry):
-    
+
     ##
-    # inits a SaccadeEndEntry 
+    # inits a SaccadeEndEntry
     def __init__(self, saccade):
         ## the saccade that belong to this end marker
         self.saccade = saccade
@@ -396,7 +396,7 @@ class SaccadeEndEntry(LogEntry):
             esac += ("ESAC" + SEP + "L" + SEP)
         else:
             raise ValueError("invalid end saccade encountered")
-        
+
         esac += ( str(int(self.saccade.getEyeTime()))   + SEP +   \
                   str(int(self.getEyeTime()))           + SEP +   \
                   str(int(self.saccade.duration))       + SEP +   \
@@ -423,7 +423,7 @@ class StartEntry(LogEntry):
     RIGHT = 2
     ## log uses both eyes
     BINO  = 3
-    
+
     ##
     # Log some mess that fixation expects, but clutters your output...
     #
@@ -444,7 +444,7 @@ class StartEntry(LogEntry):
         ''' Return a ascii presentation of these events '''
         SEP = LogEntry.SEP
         start   = "START"   + SEP + str(int(self.getEyeTime())) + SEP
-        samples = "SAMPLES" + SEP + "GAZE" + SEP 
+        samples = "SAMPLES" + SEP + "GAZE" + SEP
         events  = "EVENTS"  + SEP + "GAZE" + SEP
         postfix = "TRACKING" + SEP + "CR" + SEP + "FILTER" + SEP + "2"
 
@@ -464,7 +464,7 @@ class StartEntry(LogEntry):
             samples += SEP.join(["LEFT", "RIGHT", "HTARGET", "RATE", "250", postfix])
         else:
             raise ValueError("Unknown eye\"type\"")
-        
+
         start += SEP.join(["SAMPLES", "EVENTS"])
         #return start
         return self.le.join([start, events, samples])
@@ -472,7 +472,7 @@ class StartEntry(LogEntry):
 ##
 # needed to mark an end in a Eyelink ascii log
 class EndEntry(LogEntry):
-    
+
     ##
     # Inits an end entry
     def __init__(self, time):
@@ -567,7 +567,7 @@ class SortFixationLog:
     ## Entry with start marker.
     start = esacl + 1
     ## Entry with .
-    
+
     ##
     # this dictionary maps LogEntry.getEntryType() to above messages
     # so the above order is used for sorting.
@@ -601,7 +601,7 @@ class SortFixationLog:
                        self.mapdict[righthandside.getEntryType()]
             except KeyError as e:
                 print("left = ",lefthandside.getEntryType(), end=' ')
-                print("\tright= ",righthandside.getEntryType()) 
+                print("\tright= ",righthandside.getEntryType())
         return diff
 
 ##
@@ -619,7 +619,7 @@ def _appendBeginEndEntries(entries, eye):
                 if m.group(1) != "FILL":
                     return True
             return False
-    
+
     ## Can be used as test to filter a list of entries with trials
     # that contain a line with trialend
     class FilterTrialEnd:
@@ -631,14 +631,14 @@ def _appendBeginEndEntries(entries, eye):
                     return True
             return False
 
-    filtlist= filter(LogEntry.isMessage, entries)
-    begins  = filter(FilterTrialBegin(), filtlist)
-    ends    = filter(FilterTrialEnd(), filtlist)
+    filtlist= list(filter(LogEntry.isMessage, entries))
+    begins  = list(filter(FilterTrialBegin(), filtlist))
+    ends    = list(filter(FilterTrialEnd(), filtlist))
     for i in begins:
         entries.append (StartEntry(i.getEyeTime(), eye))
     for i in ends:
         entries.append (EndEntry(i.getEyeTime()))
-    
+
 
 ##
 # This function examines the gaze data. Creates it's own fixations and saccades
@@ -647,9 +647,9 @@ def _appendBeginEndEntries(entries, eye):
 # @param entries
 # @param filename
 def saveForFixation(entries, filename):
-    
+
     f = open(filename, "wb")
-    
+
     # create end events for fixations and saccades.
     endfixations = []
     for fix in generateFixations(entries):
@@ -657,14 +657,14 @@ def saveForFixation(entries, filename):
     endsaccades = []
     for sac in generateSaccades(entries):
         endsaccades.append(SaccadeEndEntry(sac))
-        
+
     entries.extend(endfixations)
     entries.extend(endsaccades)
 
     # generate AscGazeEntries
     for i, j in itertools.zip_longest(generateLGaze(entries), generateRGaze(entries)):
         entries.append( AscGazeEntry(i, j) )
-    
+
     eyetype = StartEntry.LEFT
     for e in reversed(entries):
         if e.getEntryType() == LogEntry.ASCGAZE:
@@ -682,10 +682,9 @@ def saveForFixation(entries, filename):
 
     #remove ordinary gaze data to keep fixation compatible gazedata
     filtobj = lambda e: not LogEntry.isGaze(e)
-    entries = filter(filtobj, entries)
+    entries = list(filter(filtobj, entries))
 
-    entries.sort(SortFixationLog())
+    entries.sort(key=functools.cmp_to_key(SortFixationLog()))
     for i in entries:
-        f.write(i.toAsc() + "\r\n")
+        f.write((i.toAsc() + "\r\n").encode('utf8'))
     f.close()
-

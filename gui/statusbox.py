@@ -5,11 +5,11 @@
 # gui. It provides a visual display to show, warnings and status messages
 # to the user.
 
-from PyQt4 import QtGui
-from PyQt4.QtGui import QIcon
+from PyQt5 import QtWidgets, QtGui
+from PyQt5.QtGui import QIcon
 from .statusmessage import *
 
-class StatusBoxMessage(QtGui.QListWidgetItem):
+class StatusBoxMessage(QtWidgets.QListWidgetItem):
     '''
     A message in a StatusBox, that gives a clue about
     what is going on in the background
@@ -45,7 +45,7 @@ class StatusBoxMessage(QtGui.QListWidgetItem):
 # lines. on each line is a status message printed.
 # The status informs the user about what is happening.
 #
-class StatusBox (QtGui.QListWidget):
+class StatusBox (QtWidgets.QListWidget):
 
     ## construct a statusbox
     def __init__(self, parent=None):

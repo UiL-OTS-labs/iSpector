@@ -10,13 +10,9 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.misc import imread
-try :
-    from scipy.stats import nanmean
-    from scipy.stats import nanmedian
-except ImportError:
-    from numpy import nanmean
-    from numpy import nanmedian
+from imageio import imread
+from numpy import nanmean
+from numpy import nanmedian
 
 import scipy as sp
 from utils.tempsignal import savitzky_golay #newer version of scipy provide there own version
@@ -408,7 +404,7 @@ class EyeData:
         elif entrytype == LogEntry.LFIX:
             et = LogEntry.LSAC
         else:
-            raise Valuerror("entry type should be LogEntry.LFIX or LogEntry.RFIX")
+            raise ValuError("entry type should be LogEntry.LFIX or LogEntry.RFIX")
 
         # loop over fixations if in between fixations are nans don't consider
         # it to be a saccade
@@ -542,7 +538,7 @@ class EyeData:
             duration = end - start
             boolvec = np.logical_and(gazetimes >= start, gazetimes <= end)
             if (duration < 0):
-                raiseValueError("Endtime before start time")
+                raise ValueError("Endtime before start time")
             meanx = sp.mean(xgaze[boolvec])
             meany = sp.mean(ygaze[boolvec])
             fixations.append(

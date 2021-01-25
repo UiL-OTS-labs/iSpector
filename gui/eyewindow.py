@@ -5,7 +5,7 @@
 #
 
 
-from PyQt4 import QtGui
+from PyQt5 import QtGui
 from eyeoutputqt import ExamineDataModel
 
 class EyeWindow (QtGui.QWidget):

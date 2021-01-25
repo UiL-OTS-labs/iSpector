@@ -44,7 +44,7 @@ from gui.ispectorgui import ISpectorGui
 from gui.ispectorgui import MainGuiModel
 import gui.statusmessage as sm
 from gui.app import ISpectorApp
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 import sys
 
 def main():
