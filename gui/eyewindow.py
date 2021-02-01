@@ -9,7 +9,6 @@ from PyQt5 import QtGui
 from eyeoutputqt import ExamineDataModel
 
 class EyeWindow (QtGui.QWidget):
-
     '''
     A standard window that provides a template for all kinds of operations.
     On one or multiple eyemovement files.

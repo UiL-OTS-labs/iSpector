@@ -29,7 +29,7 @@ class CustomDataView(object):
     # should implement this function to update themselves after a
     # modification to the model.
     def updateFromModel(self):
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
 ##
@@ -85,10 +85,12 @@ class DataView(QtWidgets.QWidget):
     # after this method has been called self.custom_widget shall contain a
     # a initialized CustomDataView derived class.
     def initCustomWidget(self):
-        msg = "Programming error: initCustomWidget called, it should be \
-implemented in a derived class and do not call this widget's \
-version."
-        raise NotImplemented(msg)
+        msg = (
+            "Programming error: initCustomWidget called, it should be "
+            "implemented in a derived class and do not call this widget's "
+            "version."
+        )
+        raise NotImplementedError(msg)
 
     ##
     # A method that tests if the data is valid.
@@ -296,7 +298,7 @@ class EditDataView(DataView):
         if self.determineSaveExperiment():
             return super(EditDataView, self).closeEvent(event)
         else:
-            event.ignore();
+            event.ignore()
 
     ##
     # handles Keypresses

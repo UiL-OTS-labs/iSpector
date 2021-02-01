@@ -183,7 +183,6 @@ class DataModel(object):
     # new file is loaded.
     def onFileLoaded(self):
         raise NotImplementedError()
-        pass
 
     ##
     # onNewTrial should be called when a new trial index has been selected.
@@ -228,6 +227,7 @@ class DataModel(object):
     def showRight(self):
         MM = self._MAINWIN.getModel()[0]
         return MM[MM.EXTRACT_RIGHT] or (not MM[MM.EXTRACT_LEFT] and not MM[MM.EXTRACT_RIGHT])
+
     ##
     # indicates whether the user wants to show the data of the average eyesignal
     def showAvg(self):
@@ -271,8 +271,8 @@ class ExamineDataModel(DataModel):
     def onFileLoaded(self):
         pass
 
-    ##Loads an EyeData instance for one trial.
-    #
+    ##
+    # Loads an EyeData instance for one trial.
     def _loadEyeData(self):
         trial = self.trials[self.trialindex]
         # We only want to read the model thus no need to get the controller
@@ -284,7 +284,7 @@ class ExamineDataModel(DataModel):
         order   = MM[MM.SMOOTHORDER]
 
         self.eyedata = EyeData(thres, nthres, smooth, win, order)
-        self.eyedata.processTrial(self.trials[self.trialindex])
+        self.eyedata.processTrial(trial)
 
 
 ##
