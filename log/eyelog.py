@@ -361,9 +361,9 @@ class SaccadeEntry(LogEntry):
         string =""
         SEP = LogEntry.SEP
         if self.getEntryType() == LogEntry.RSAC:
-            string += ("SSAC" + SEP + "R" + SEP + str(int(self.getEyeTime())) )
+            string += ("SSACC" + SEP + "R" + SEP + str(int(self.getEyeTime())) )
         elif self.getEntryType() == LogEntry.LSAC:
-            string += ("SSAC" + SEP + "L" + SEP + str(int(self.getEyeTime())) )
+            string += ("SSACC" + SEP + "L" + SEP + str(int(self.getEyeTime())) )
         else: raise ValueError("Unknown entry type")
         return string
 
@@ -391,9 +391,9 @@ class SaccadeEndEntry(LogEntry):
         esac = ""
         SEP = LogEntry.SEP
         if self.getEntryType() == LogEntry.SACCENDR:
-            esac += ("ESAC" + SEP + "R" + SEP)
+            esac += ("ESACC" + SEP + "R" + SEP)
         elif self.getEntryType() == LogEntry.SACCENDL:
-            esac += ("ESAC" + SEP + "L" + SEP)
+            esac += ("ESACC" + SEP + "L" + SEP)
         else:
             raise ValueError("invalid end saccade encountered")
 
@@ -404,7 +404,7 @@ class SaccadeEndEntry(LogEntry):
                   str(self.saccade.ystart)              + SEP +   \
                   str(self.saccade.xend)                + SEP +   \
                   str(self.saccade.yend)                + SEP +   \
-                  str(int(self.saccade.duration))       + SEP
+                  str(int(self.saccade.duration))
                   )
         return esac
 
