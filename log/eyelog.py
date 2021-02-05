@@ -450,7 +450,7 @@ class StartEntry(LogEntry):
 
         if self.eye == StartEntry.LEFT:
             start += "LEFT" + SEP
-            #to do hard coded "250" isn't really nice"
+            # TODO hard coded "250" isn't really nice"
             events += SEP.join(["LEFT", "RATE", "250", postfix])
             samples += SEP.join(["LEFT", "HTARGET", "RATE", "250", postfix])
         elif self.eye == StartEntry.RIGHT:
@@ -459,7 +459,7 @@ class StartEntry(LogEntry):
             samples += SEP.join(["RIGHT", "HTARGET", "RATE", "250", postfix])
         elif self.eye == StartEntry.BINO:
             # NOTE Fixation tool doesn't know about this.
-            start += SEP.join(["LEFT","RIGHT"])
+            start += "".join(["LEFT", SEP, "RIGHT", SEP])
             events += SEP.join(["LEFT", "RIGHT", "RATE", "250", postfix])
             samples += SEP.join(["LEFT", "RIGHT", "HTARGET", "RATE", "250", postfix])
         else:
