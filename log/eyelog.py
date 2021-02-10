@@ -1,4 +1,13 @@
 #!usr/bin/env python
+'''Eyelog.py is a module that contains of all classes needed to
+create an logfile for the analysis of behavioral experiments
+that yield eyemovement data.
+In theory an experiment consists of a series of trials.
+In a trial are a number of events that can occur. Events
+are the occurence of samples of the eyetracker, fixations, saccades
+etc. An event is characterized by a timestamp and a type.
+Events will be primaraly sorted on timestamp and then on the type.
+'''
 
 ##
 # \file eyelog.py
