@@ -7,7 +7,7 @@
 # \package log
 #
 
-import re
+import sys
 from .eyelog import *
 import gui.statusmessage as sm 
 
@@ -81,7 +81,7 @@ def extractCsvLog(lines):
     n = 1 # use this to mark location in file where the error is found
     for i in lines:
         try:
-            splitline = i.split(LogEntry.SEP);
+            splitline = i.split(LogEntry.SEP)
             logentries.append(getLogEntry(splitline))
         except Exception as e:
             raise ValueError(
@@ -96,117 +96,148 @@ def extractCsvLog(lines):
 # \return a list of log entries.
 #
 def extractAscLog(lines):
-    '''
-        Examines each line to check whether it has got valid input
-        if so it appends it to the log entries
+    '''Examines each line to check whether it has got valid input
+       if so it appends it to the log entries. Lines that ain't
+       recognized are silently ignored.
     '''
     logentries = []
-    # asclog has no mention of time in zep or the program
-    #float between captured in regex group
-    cflt = r"([-+]?[0-9]*\.?[0-9]+)"
-    # match a message in the log
-    msgre = re.compile(r"MSG\s+(\d+)\s+([^\r\n]*)")
-    duosample = re.compile(
-        r"^(\d+)\s+" + cflt + r"\s+" + cflt + r"\s+" + cflt + r"\s+" + cflt + r"\s+" + cflt + r"\s+" + cflt + r".+$"
-        )
-    #monosample would also match a duo sample(sample with both eyes, where the first three columns are assumed to be the left eye and the 2nd three columns belong to the right eye
-    monosample = re.compile(r"^(\d+)\s+" + cflt + r"\s+" + cflt + r"\s+" + cflt + r".+$")
-    #matches a end fixation, start fixations are ignored
-    endfix = re.compile(
-        r"^EFIX\s+(R|L)\s+(\d+)\s+(\d+)\s+(\d+)\s+" + cflt + r"\s+" + cflt + r"\s+(\d+).*"
-        )
+    MSG = "MSG"
+    START = "START"
+    END = "END"
+    ESACC = "ESACC"
+    EFIX = "EFIX"
+    SAMPLE = "SAMPLE" # this is the key for sample parser
 
-    endsac = re.compile (
-        r"^ESAC\s+(R|L)\s+(\d+)\s+(\d+)\s+(\d+)\s+" + cflt + r"\s+" + cflt + r"\s+" + cflt + r"\s+" + cflt + r".+$"
-        )
-    #this regex is used to determine whether monocular data is from the left or the right eye
-    sampleformat = re.compile(r"^SAMPLES\s+GAZE\s+(\w+).+$")
-    isleft = False
+    # match a message in the log
+    def parse_message(split_line : list, log : list):
+        assert(split_line[0] == MSG)
+        # todo add gracefull error handling
+        # if len(split_line) != 3 or split_line[0] != MSG:
+        #     return;
+        log.append(MessageEntry(int(split_line[1]), split_line[2]))
+
+    def parse_mono_sample_l(split_line : list, log : list):
+        time = float(split_line[0])
+        xcoor = float(split_line[1])
+        ycoor = float(split_line[2])
+        pupsz = float(split_line[3])
+        sample = GazeEntry(LogEntry.LGAZE, time, xcoor, ycoor, pupsz)
+        log.append(sample)
+
+    def parse_mono_sample_r(split_line : list, log : list):
+        time = float(split_line[0])
+        xcoor = float(split_line[1])
+        ycoor = float(split_line[2])
+        pupsz = float(split_line[3])
+        sample = GazeEntry(LogEntry.RGAZE, time, xcoor, ycoor, pupsz)
+        log.append(sample)
+
+    def parse_binocular_sample(split_line : list, log : list):
+        time = float(split_line[0])
+
+        xcoorl = float(split_line[1])
+        ycoorl = float(split_line[2])
+        pupszl = float(split_line[3])
+
+        xcoorr = float(split_line[4])
+        ycoorr = float(split_line[5])
+        pupszr = float(split_line[6])
+
+        samplel = GazeEntry(LogEntry.LGAZE, time, xcoorl, ycoorl, pupszl)
+        sampler = GazeEntry(LogEntry.RGAZE, time, xcoorr, ycoorr, pupszr)
+        log.append(samplel)
+        log.append(sampler)
+
+    def parse_fix(split_line : list, log : list):
+        eye = split_line[1]
+        time_start = int(split_line[2])
+        #time_end = int(split_line[3])
+        dur = int(split_line[4])
+        xcoor = float(split_line[5])
+        ycoor = float(split_line[6])
+        fix = None
+        if eye == "L":
+            fix = FixationEntry(LogEntry.LFIX, time_start, dur, xcoor, ycoor)
+        elif eye == "R":
+            fix = FixationEntry(LogEntry.RFIX, time_start, dur, xcoor, ycoor)
+        
+        if fix:
+            log.append(fix)
+
+    def parse_saccade(split_line : list, log : list):
+        eye = split_line[1]
+        time_start = int(split_line[2])
+        # time_end = int(split_line[3])
+        dur = int(split_line[4])
+        xstart = float(split_line[5])
+        ystart = float(split_line[6])
+        xend = float(split_line[5])
+        yend = float(split_line[6])
+        sac = None
+        if eye == "L":
+            sac = SaccadeEntry(LogEntry.RSAC, time_start, dur, xstart, ystart, xend, yend)
+        elif eye == "R":
+            sac = SaccadeEntry(LogEntry.LSAC, time_start, dur, xstart, ystart, xend, yend)
+
+        if sac:
+            log.append(sac)
+
+    parsers = {
+        MSG : parse_message,
+        EFIX : parse_fix,
+        ESACC : parse_saccade,
+    }
+
+    def parse_start(split_line, _log):
+        '''parses start messeage and installs a sample parser'''
+        LEFT = "LEFT"
+        RIGHT = "RIGHT"
+        coleye1 = split_line[2]
+        coleye2 = split_line[3]
+        if coleye1 == LEFT and coleye2 == RIGHT:
+            parsers[SAMPLE] = parse_binocular_sample
+        elif coleye1 == LEFT:
+            parsers[SAMPLE] = parse_mono_sample_l
+        elif coleye1 == RIGHT:
+            parsers[SAMPLE] = parse_mono_sample_r
+
+    def parse_end(split_line, _log):
+        '''parses end messeage and removes a sample parser'''
+        parsers.pop(SAMPLE, None)
+
+    parsers[START] = parse_start
+    parsers[END] = parse_end
 
     #iterate over all lines and add relevant lines to the log
-    for i in lines:
-        m = msgre.search(i)
-        if m:
-            e  = MessageEntry(float(m.group(1)), m.group(2))
-            logentries.append(e)
-            continue
-        m = duosample.search(i)
-        if m:
-            #matched binocular sample
-            try :
-                eyetime = float(m.group(1))
-                lx = float(m.group(2))
-                ly = float(m.group(3))
-                lp = float(m.group(4))
-                rx = float(m.group(5))
-                ry = float(m.group(6))
-                rp = float(m.group(7))
-                lgaze = GazeEntry(LogEntry.LGAZE, eyetime, lx, ly, lp)
-                rgaze = GazeEntry(LogEntry.RGAZE, eyetime, rx, ry, rp)
-                logentries.append(lgaze)
-                logentries.append(rgaze)
-            except ValueError as v:
-                import traceback
-                print(i)
-                print(traceback.print_exc())
-            continue
-        m = sampleformat.search(i)
-        if m:
-            #detect whether monocular data belongs to left or right eye
-            lorr = m.group(1)
-            isleft =  lorr.lower() == "right"
-            continue
-        m = monosample.search(i)
-        if m:
-            #matched monocular sample 
-            eyetime = int(m.group(1))
-            lx = float(m.group(2))
-            ly = float(m.group(3))
-            lp = float(m.group(4))
-            #threat all gazes as left gazes
-            gaze = None
-            if isleft:
-                gaze = GazeEntry(LogEntry.LGAZE, eyetime, lx, ly, lp)
-            else:
-                gaze = GazeEntry(LogEntry.RGAZE, eyetime, lx, ly, lp)
-            logentries.append(gaze)
-            continue
-        m = endfix.search(i)
-        if m:
-            # detected fixation
-            eyetype = m.group(1)
-            fixstart = float(m.group(2))
-            # eyeend = m.group(3) not used
-            duration = float(m.group(4))
-            x = float(m.group(5))
-            y = float(m.group(6))
-            fixentry = None
-            if (eyetype == "R"):
-                fixentry = FixationEntry(LogEntry.RFIX, fixstart, duration, x, y)
-            elif (eyetype == "L"):
-                fixentry = FixationEntry(LogEntry.LFIX, fixstart, duration, x, y)
-            else:
-                raise ValueError("Invalid fixation end: " + i)
-            logentries.append(fixentry)
-            continue
-        m = endsac.search(i)
-        if m:
-            # detected saccade
-            eyetype = m.group(1)
-            sacstart = float(m.group(2))
-            #sacend = m.group(3) not used
-            duration = float(m.group(4))
-            x1 = float(m.group(5))
-            y1 = float(m.group(6))
-            x2 = float(m.group(7))
-            y2 = float(m.group(8))
-            sacentry = None
-            if eyetype == "R":
-                sacentry = SaccadeEntry(LogEntry.RSAC, sacstart, duration, x1, y1, x2, y2)
-            if eyetype == "L":
-                sacentry = SaccadeEntry(LogEntry.LSAC, sacstart, duration, x1, y1, x2, y2)
-            logentries.append(sacentry)
+    for index, line in enumerate(lines):
+        split_line = line.split('\t')
+        try :
+            # when a line starts with a integer it should be a sample
+            _time = int(split_line[0])
+            try:
+                if SAMPLE in parsers:
+                    parsers[SAMPLE](split_line, logentries)
+                    continue
+                else:
+                    continue
+            except Exception as e:
+                err = 'Unrecognized sample at line {}:\n\t"{}"\nexception = {}'
+                print(err.format(index + 1, line, str(e)), file=sys.stderr)
+        except ValueError as _not_a_sample:
+            pass
 
+        key = split_line[0]
+        if key in parsers:
+            parsers[key](split_line, logentries)
+        else:
+            ignore_keys = set(["SFIX", "SSACC"])
+            if key not in ignore_keys:
+                print('Unrecognized line {}:\n\t"{}"'.format(
+                        index + 1,
+                        line
+                    ),
+                    file=sys.stderr
+                )
     return logentries
 
 
