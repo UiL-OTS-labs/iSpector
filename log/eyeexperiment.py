@@ -303,6 +303,7 @@ class EyeExperiment(object):
         for i in entries:
             if trial and self._isTrialEntry(i) and foundsync :
                 trial.addEntry(i)
+                continue
             else:
                 if not trial:
                     tempmeta.append(i)
