@@ -114,7 +114,7 @@ def extractAscLog(lines):
         # todo add gracefull error handling
         # if len(split_line) != 3 or split_line[0] != MSG:
         #     return;
-        log.append(MessageEntry(int(split_line[1]), split_line[2]))
+        log.append(MessageEntry(int(split_line[1]), split_line[2].strip()))
 
     def parse_mono_sample_l(split_line : list, log : list):
         time = float(split_line[0])
@@ -207,6 +207,8 @@ def extractAscLog(lines):
 
     parsers[START] = parse_start
     parsers[END] = parse_end
+    #messages starting with the following keys are ignored
+    ignore_keys = set(["SFIX", "SSACC", "SAMPLES", "EVENTS"])
 
     #iterate over all lines and add relevant lines to the log
     for index, line in enumerate(lines):
@@ -230,7 +232,6 @@ def extractAscLog(lines):
         if key in parsers:
             parsers[key](split_line, logentries)
         else:
-            ignore_keys = set(["SFIX", "SSACC"])
             if key not in ignore_keys:
                 print('Unrecognized line {}:\n\t"{}"'.format(
                         index + 1,
