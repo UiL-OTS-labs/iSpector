@@ -301,6 +301,16 @@ class EyeExperiment(object):
         trial = None
         tempmeta = []
         for i in entries:
+            if trial and self._isTrialEntry(i) and foundsync :
+                trial.addEntry(i)
+            else:
+                if not trial:
+                    tempmeta.append(i)
+                else:
+                    for m in tempmeta:
+                        trial.addMeta(m)
+                    tempmeta = []
+                    trial.addMeta(i)
             if havestart == False:
                 if self._isTrialBegin(i):
                     havestart = True
@@ -324,16 +334,6 @@ class EyeExperiment(object):
                 trial.setStimulus(i.message.split()[1])
             if self._isSync(i):
                 foundsync = True
-            if trial and self._isTrialEntry(i) and foundsync :
-                trial.addEntry(i)
-            else:
-                if not trial:
-                    tempmeta.append(i)
-                else:
-                    for m in tempmeta:
-                        trial.addMeta(m)
-                    tempmeta = []
-                    trial.addMeta(i)
 
         for t in self.trials:
             #if t.isMonocular():
