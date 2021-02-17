@@ -8,6 +8,7 @@
 import argparse
 import matplotlib
 from gui.ispectorgui import MainGuiModel
+import gui.ispectorgui
 
 PARSER = None
 ARGS   = None
@@ -38,7 +39,8 @@ def _addArguments(p):
         help="Enable smoothing", action="store_true"
         )
     p.add_argument('-w', '--swin',
-        help="Size of the smoothing window, the value must be odd", type=int, default=7
+        help="Size of the smoothing window, the value must be odd", type=int,
+         default=7, choices=gui.ispectorgui.SMOOTH_WINDOW_CHOICES
         )
     p.add_argument('-o', '--sorder',
         help='Polynomial order of function used to smooth see wiki on Savitzky-Golayfilter filter',
