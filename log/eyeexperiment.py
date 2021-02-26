@@ -11,7 +11,7 @@ import re
 ##
 # An EyeTrial contains all events in a single trials in a experiment
 #
-# In a log all events are ordered in time. The eyetrial separates
+# In a log, all events are ordered in time. The eyetrial separates
 # all events in logical event types. And optionally stores
 # the presented stimulus.
 # 
@@ -54,11 +54,46 @@ class EyeTrial(object):
         self.meta   = []
 
     ##
+    # Creates a deep copy of the EyeTrial.
+    def copy(self):
+        cstim       = str(self.stimulus)
+        clgaze      = [gaze.copy() for gaze in self.lgaze]
+        crgaze      = [gaze.copy() for gaze in self.rgaze]
+        clfix       = [fix.copy() for fix in self.lfix]
+        crfix       = [fix.copy() for fix in self.rfix]
+        cavgfix     = [fix.copy() for fix in self.avgfix]
+        cloglfix    = [fix.copy() for fix in self.loglfix]
+        clogrfix    = [fix.copy() for fix in self.logrfix]
+        clogavgfix  = [fix.copy() for fix in self.logavgfix]
+        clsac       = [sac.copy() for sac in self.lsac]
+        crsac       = [sac.copy() for sac in self.rsac]
+        cavgsac     = [sac.copy() for sac in self.avgsac]
+        cloglsac    = [sac.copy() for sac in self.loglsac]
+        clogrsac    = [sac.copy() for sac in self.logrsac]
+        clogavgsac  = [sac.copy() for sac in self.logavgsac]
+        cmeta       = [meta.copy() for meta in self.meta]
+
+        newcopy = EyeTrial()
+        newcopy.stimulus = cstim
+        newcopy.lgaze, newcopy.rgaze = clgaze, crgaze
+        newcopy.lfix, newcopy.rfix, newcopy.avgfix = clfix, crfix, cavgfix
+        newcopy.loglfix, newcopy.logrfix, newcopy.logavgfix = cloglfix, clogrfix, clogavgfix
+        newcopy.lsac, newcopy.rsac, newcopy.avgsac = clsac, crsac, cavgsac
+        newcopy.loglsac, newcopy.logrsac, newcopy.logavgsac = cloglsac, clogrsac, clogavgsac
+        newcopy.meta = cmeta
+
+        return newcopy
+
+    ##
     # instance equality
     #
     # \return True if two instances of EyeTrial are equal, false otherwise.
     def __eq__(self, rhs):
-        return type(self) is type(rhs) and self.__dict__ == rhs.__dict__
+        types = type(self) is type(rhs)
+        if not types:
+            return False
+        else:
+            return self.__dict__ == rhs.__dict__
     
     ##
     # instance inequality
@@ -347,7 +382,11 @@ class EyeExperiment(object):
     #
     # \returns True if they are identical, but False when they are not.
     def __eq__(self, rhs):
-        return type(self) is type(rhs) and self.__dict__ == rhs.__dict__
+        types = type(self) is type(rhs)
+        if not types:
+            return False
+        else:
+            return self.__dict__ == rhs.__dict__
 
     ##
     # Examines whether two experiments hold different data.
@@ -413,3 +452,11 @@ class EyeExperiment(object):
             ret += trial.getEntries()
         return ret
 
+    def copy(self):
+        '''Returns a deepcopy of self'''
+        copytrials = [t.copy() for t in self.trials]
+        copymeta = [m.copy() for m in self.meta]
+        newexp = EyeExperiment([])
+        newexp.trials = copytrials
+        newexp.meta = copymeta
+        return newexp

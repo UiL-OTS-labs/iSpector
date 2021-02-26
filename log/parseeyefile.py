@@ -313,7 +313,7 @@ def parseEyeFile(filename):
         pr.setEntries(entries)
         if not entries:
             raise RuntimeError("No usable data found")
-    except Exception as e:
+    except ValueError as e:
         pr.appendError((AscError, e, sm.StatusMessage.warning))
         pr.appendError(("Unable to parse: ",
                 filename, sm.StatusMessage.error))
