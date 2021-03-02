@@ -75,7 +75,7 @@ class ConfigFile (dict):
                 str(e)
             )
             print(msg, file=sys.stderr)
-            print("Creating a new one...")
+            print("Creating a new one...", file=sys.stderr)
             self.create()
 
     ##
@@ -88,27 +88,21 @@ class ConfigFile (dict):
     ##
     # parses itself
     def parse(self):
-        f = open(self.conffile, 'r')
-        content = f.read()
-        self.update( json.loads(content) )
-        f.close()
+        with open(self.conffile, 'r') as f:
+            content = f.read()
+            self.update(json.loads(content))
 
     ##
     # \brief Creates the directory and path to a in the file system
     # json config file
     def create(self):
-        f = None
-        if not os.path.exists (self.configdir):
+        if not os.path.exists(self.configdir):
             os.makedirs(self.configdir)
-        if not os.path.exists(self.conffile):
-            f = open(self.conffile, 'w')
-        else :
-            f = open(self.conffile, 'w')
-        self[DIR] = ConfigDir()
-        self[FILE_HIST] = list()
+        with open(self.conffile, 'w') as f:
+            self[DIR] = ConfigDir()
+            self[FILE_HIST] = list()
 
-        f.write(json.dumps(self))
-        f.close()
+            f.write(json.dumps(self))
 
     ##
     # \brief Return the path to the config directory of iSpector
@@ -128,13 +122,14 @@ class ConfigFile (dict):
     
     ##
     # returns the unix configuration directory.
-    # \return $HOME/.iSpector
+    # \return a path to a unix config dir.
     def _getUnixConfigDir(self):
         path = os.getenv(self.XDG_CONFIG_HOME)
         if path:
             return path + PROGRAM + "/"
 
         return os.path.expanduser("~/" + UNIX_CONFIG_DIR + "/" + PROGRAM + "/")
+
     ##
     # Tries to find the $HOME under unices, but appdata under windows.
     #
@@ -150,5 +145,5 @@ class ConfigFile (dict):
 if __name__ == "__main__":
     conffile = ConfigFile()
     conffile.write()
-    json.dumps(conffile, indent=2)
+    print(json.dumps(conffile, indent=2))
 
