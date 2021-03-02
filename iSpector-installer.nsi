@@ -3,7 +3,7 @@
 ;* on a windows system.
 ;*/
 
-SetCompressor /SOLID /FINAL lzma
+SetCompressor /SOLID /FINAL zlib
 
 !include LogicLib.nsh
 !include MUI2.nsh
@@ -17,7 +17,7 @@ SetCompressor /SOLID /FINAL lzma
 
 ; Don't update these three variables, this should be done with bump-version.py.
 !define MY_VERSION_MAJOR "0"
-!define MY_VERSION_MINOR "3"
+!define MY_VERSION_MINOR "4"
 !define MY_VERSION_MICRO "0"
 
 ; Full application name include major and minor versions, in such way
@@ -26,7 +26,25 @@ SetCompressor /SOLID /FINAL lzma
 
 ; Path to registry where uninstall info is stored.
 !define REGISTRY_UN_PATH    "Software\Microsoft\Windows\CurrentVersion\Uninstall\"
-   
+
+;
+; ---- These must be defined for the gui to work
+;
+
+
+; uninstaller settings
+!insertmacro MUI_UNPAGE_WELCOME
+!insertmacro MUI_UNPAGE_CONFIRM
+!insertmacro MUI_UNPAGE_INSTFILES
+!insertmacro MUI_UNPAGE_FINISH
+
+; installer settings
+!insertmacro MUI_PAGE_WELCOME
+!insertmacro MUI_PAGE_LICENSE   "LICENSE"
+!insertmacro MUI_PAGE_INSTFILES
+!insertmacro MUI_PAGE_FINISH
+!insertmacro MUI_LANGUAGE       "English" 
+
 ;
 ; ------- text strings for the mui
 ;
@@ -80,26 +98,9 @@ LangString MUI_UNTEXT_FINISH_INFO_REBOOT    ${LANG_ENGLISH} "Deinstallation no n
 LangString MUI_UNTEXT_FINISH_INFO_TEXT      ${LANG_ENGLISH} "${FULL_APP_NAME} is uninstalled bye."
 
 
-;
-; ---- These must be defined for the gui to work
-;
-
-; installer settings
-!insertmacro MUI_LANGUAGE       "English" 
-!insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE   "LICENSE"
-!insertmacro MUI_PAGE_INSTFILES
-!insertmacro MUI_PAGE_FINISH
-
-; uninstaller settings
-!insertmacro MUI_UNPAGE_WELCOME
-!insertmacro MUI_UNPAGE_CONFIRM
-!insertmacro MUI_UNPAGE_INSTFILES
-!insertmacro MUI_UNPAGE_FINISH
-
 
 ;----- iSpector is a normal program that doesn't need administrator privilleges
-RequestExecutionLevel user
+RequestExecutionLevel admin
 
 Icon ${MY_ICON}
 
@@ -107,7 +108,7 @@ Icon ${MY_ICON}
 OutFile "${FULL_APP_NAME}-installer.exe"
 
 ; install standard under program files - uil_ots
-InstallDir "$PROGRAMFILES\${MY_ORGANISATION}"
+InstallDir "$PROGRAMFILES64\${MY_ORGANISATION}"
 
 
 ;-------- Install
@@ -118,7 +119,7 @@ Section
 
     ; Create short cut
     CreateDirectory "$SMPROGRAMS\${MY_ORGANISATION}"
-    CreateShortCut  "$SMPROGRAMS\${MY_ORGANISATION}\${FULL_APP_NAME}.lnk" \
+    CreateShortCut  "$SMPROGRAMS\${MY_ORGANISATION}\${FULL_APP_NAME}.lnk"   \
                     "$INSTDIR\${FULL_APP_NAME}\iSpector.exe"                \
                     ""                                                      \
                     "$INSTDIR\${FULL_APP_NAME}\${MY_ICON}"                  \
