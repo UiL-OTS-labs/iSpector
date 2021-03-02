@@ -67,7 +67,16 @@ class ConfigFile (dict):
         self.conffile  = self.configdir + PROGRAM + EXTENSION
         if not os.path.exists(self.conffile):
             self.create()
-        self.parse()
+        try :
+            self.parse()
+        except json.decoder.JSONDecodeError as e:
+            msg = "Unable to parse configfile {} because: {}".format(
+                self.conffile,
+                str(e)
+            )
+            print(msg, file=sys.stderr)
+            print("Creating a new one...")
+            self.create()
 
     ##
     # Writes itself to the config file.
