@@ -1,4 +1,13 @@
 #!usr/bin/env python
+'''Eyelog.py is a module that contains of all classes needed to
+create an logfile for the analysis of behavioral experiments
+that yield eyemovement data.
+In theory an experiment consists of a series of trials.
+In a trial are a number of events that can occur. Events
+are the occurence of samples of the eyetracker, fixations, saccades
+etc. An event is characterized by a timestamp and a type.
+Events will be primaraly sorted on timestamp and then on the type.
+'''
 
 ##
 # \file eyelog.py
@@ -7,12 +16,11 @@
 
 import itertools
 import functools
-from abc import abstractmethod
-from abc import ABCMeta
+import abc 
 
 ##
 #An abstract base class for all LogEntries in an eyelog.
-class LogEntry (metaclass=ABCMeta):
+class LogEntry (abc.ABC):
 
     ## LogEntry contains functions from a ABCMeta classes
     LGAZE       = 0
@@ -78,6 +86,7 @@ class LogEntry (metaclass=ABCMeta):
         return self.eyetime
 
     ## callback used to sort logentries on time
+    @staticmethod
     def sortCallback(el, er):
         diff = el.getEyeTime() - er.getEyeTime()
         if diff < 0:
@@ -90,9 +99,16 @@ class LogEntry (metaclass=ABCMeta):
     ## Serialize this logentry in EyeLink Ascii format
     #
     # @return A string that descibes the event suitable for a eyelink log.
-    @abstractmethod
+    @abc.abstractmethod
     def toAsc(self):
         ''' Implement return of string in format as Eyelink edf to ascii does. '''
+        pass
+
+    ##
+    # Create a deep copy of this instance
+    #
+    @abc.abstractmethod
+    def copy(self):
         pass
 
 #    @abstractmethod
@@ -188,6 +204,12 @@ class GazeEntry(LogEntry) :
         ## the pupilsize of the gaze sample
         self.pupil = pupil
 
+    ## 
+    # Create a copy from the original
+    #
+    def copy(self):
+        return GazeEntry(self.entrytype, self.eyetime, self.x, self.y, self.pupil)
+
     ##
     # Create a string from self in Eyelink ascii format
     def toAsc(self):
@@ -216,6 +238,10 @@ class AscGazeEntry(LogEntry):
         ## contains a GazeEntry for the right eye.
         self.rgaze = rgaze
 
+    ##
+    # deep copy the asc gaze entry
+    def copy(self):
+        return AscGazeEntry(self.lgaze, self.rgaze)
     ##
     # Create a string from self in Eyelink ascii format
     def toAsc(self):
@@ -255,6 +281,11 @@ class FixationEntry(LogEntry):
         ## the duration of this fixation
         self.duration = eyedur
 
+    def copy(self):
+        return FixationEntry(
+            self.entrytype, self.eyetime, self.duration, self.x, self.y
+        )
+
     ##
     # Create a string from self in Eyelink ascii format
     def toAsc(self):
@@ -282,6 +313,11 @@ class FixationEndEntry(LogEntry):
         else:
             raise ValueError("Fixation entry should be initialized with LFIX or RFIX")
         super(FixationEndEntry, self).__init__(entry, time)
+    
+    ##
+    # create a deepcopy of oneself
+    def copy(self):
+        return FixationEntry(self.fixation)
 
     ##
     # Create a string from self in Eyelink ascii format
@@ -312,6 +348,11 @@ class MessageEntry(LogEntry):
         super(MessageEntry, self).__init__(LogEntry.MESSAGE, eyetime)
         ## the message of this Message entry
         self.message = message
+    
+    ##
+    # Return a deepcopy of the message entry
+    def copy(self):
+        return MessageEntry(self.eyetime, str(self.message))
 
     ##
     # Create a string from self in Eyelink ascii format
@@ -354,6 +395,14 @@ class SaccadeEntry(LogEntry):
         self.yend   = yend
         ## duration of the saccade in ms.
         self.duration = duration
+    
+    ##
+    # create a deep copy of oneself
+    def copy(self):
+        return SaccadeEntry(
+            self.entrytype, self.eyetime, self.duration,
+            self.xstart, self.ystart, self.xend, self.yend
+        )
 
     ##
     # Create a string from self in Eyelink ascii format
@@ -384,6 +433,11 @@ class SaccadeEndEntry(LogEntry):
         else:
             raise ValueError("No saccade to init SaccadeEndEntry")
         super(SaccadeEndEntry, self).__init__(entry, start)
+    
+    ##
+    # Creates a deepcopy of oneself
+    def copy(self):
+        return SaccadeEndEntry(self.saccade.copy())
 
     ##
     # Create a string from self in Eyelink ascii format
@@ -437,6 +491,9 @@ class StartEntry(LogEntry):
         ## tells which line ending must be used
         self.le  = le
         super(StartEntry, self).__init__(LogEntry.BEGIN, time)
+    
+    def copy(self):
+        return StartEntry(self.eyetime, self.eye, self.le)
 
     ##
     # Create a string from self in Eyelink ascii format
@@ -477,6 +534,9 @@ class EndEntry(LogEntry):
     # Inits an end entry
     def __init__(self, time):
         super(EndEntry, self).__init__(LogEntry.END, time)
+    
+    def copy(self):
+        return EndEntry(self.eyetime)
 
     ##
     # Create a string from self in Eyelink ascii format

@@ -22,6 +22,7 @@ from . import fixationeditor
 
 LOGO = "iSpectorLogo.svg"
 
+SMOOTH_WINDOW_CHOICES = [str(i) for i in range(3,21, 2)]
 
 class NoSuchString(Exception):
     def __init__(self,message):
@@ -383,7 +384,7 @@ class OptionGroup(QtWidgets.QGroupBox):
         # all windowsizes are valid.
         combo = QtWidgets.QComboBox()
         combo.setToolTip(self.smoothwintip)
-        combo.addItems([str(i) for i in range(3,21, 2)])
+        combo.addItems(SMOOTH_WINDOW_CHOICES)
         combo.activated.connect(self._handle)
         self.grid.addWidget(combo, 3, 1)
         self.windowcombo = combo

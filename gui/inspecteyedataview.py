@@ -121,6 +121,7 @@ class SignalPlotWidget(FigureCanvas):
             linestyle=_leftl,
             thresholdstyle=_thresholdl
             ):
+        self.clear()
         #self.axgazex.hold(False)
         #self.axgazey.hold(False)
         #self.axvelo.hold(False)

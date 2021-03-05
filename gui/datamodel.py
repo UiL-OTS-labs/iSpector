@@ -427,7 +427,7 @@ class EditDataModel (DataModel):
     #
     def onFileLoaded(self):
         #super(EditDataModel, self).onFileLoaded() raise NotImplementedError
-        self._current_experiment = copy.deepcopy(self.experiment)
+        self._current_experiment = self.experiment.copy()
 
     ##
     # Called when a new trial must be shown
