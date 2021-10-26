@@ -17,7 +17,7 @@ SetCompressor /SOLID /FINAL zlib
 
 ; Don't update these three variables, this should be done with bump-version.py.
 !define MY_VERSION_MAJOR "0"
-!define MY_VERSION_MINOR "4"
+!define MY_VERSION_MINOR "5"
 !define MY_VERSION_MICRO "0"
 
 ; Full application name include major and minor versions, in such way
