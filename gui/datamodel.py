@@ -156,6 +156,7 @@ class DataModel(object):
     #
     def setTrialIndex(self, n):
         # check whether n is valid and different
+        assert(self.trials)
         assert(n >= 0 and n < len(self.trials))
         if n == self.trialindex:
             return
