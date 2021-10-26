@@ -111,9 +111,9 @@ def extractAscLog(lines):
     # match a message in the log
     def parse_message(split_line : list, log : list):
         assert(split_line[0] == MSG)
-        # todo add gracefull error handling
-        # if len(split_line) != 3 or split_line[0] != MSG:
-        #     return;
+        if len(split_line):
+            split_line = [split_line[0], split_line[1], " ".join(split_line[2:])]
+        assert(len(split_line) == 3 and split_line[0] == MSG)
         log.append(MessageEntry(int(split_line[1]), split_line[2].strip()))
 
     def parse_mono_sample_l(split_line : list, log : list):
@@ -189,7 +189,7 @@ def extractAscLog(lines):
     }
 
     def parse_start(split_line, _log):
-        '''parses start messeage and installs a sample parser'''
+        '''parses start message and installs a sample parser'''
         LEFT = "LEFT"
         RIGHT = "RIGHT"
         coleye1 = split_line[2]
@@ -208,12 +208,23 @@ def extractAscLog(lines):
     parsers[START] = parse_start
     parsers[END] = parse_end
     #messages starting with the following keys are ignored
-    ignore_keys = set(["SFIX", "SSACC", "SAMPLES", "EVENTS"])
+    ignore_keys = set([
+        "SFIX",
+        "SSACC",
+        "SAMPLES",
+        "EVENTS",
+        "**",
+        "PRESCALER",
+        "VPRESCALER",
+        "PUPIL",
+    ])
 
     #iterate over all lines and add relevant lines to the log
     for index, line in enumerate(lines):
-        split_line = line.split('\t')
+        split_line = line.split()
         try :
+            if split_line == []: # skip empty lines
+                continue
             # when a line starts with a integer it should be a sample
             _time = int(split_line[0])
             try:
