@@ -10,7 +10,7 @@ name = "iSpector"
 
 iSpector_major = 0
 iSpector_minor = 5
-iSpector_micro = 1
+iSpector_micro = 2
 
 def getVersionMajor():
     return iSpector_major
