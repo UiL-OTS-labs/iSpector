@@ -187,6 +187,11 @@ class LogEntry (abc.ABC):
 #This describes a left or right eye gaze sample of the eyetracker.
 class GazeEntry(LogEntry) :
 
+    ACCEPTABLE_ENTRIES = [
+        LogEntry.LGAZE,
+        LogEntry.RGAZE
+    ]
+
     ##
     # construct a GazeEntry
     #
@@ -196,6 +201,8 @@ class GazeEntry(LogEntry) :
     # \param y float of the y-coordinate of the gaze
     # \param pupil the pupilsize during the gazesample
     def __init__(self, entrytype, eyetime, x, y, pupil) :
+        if not entrytype in GazeEntry.ACCEPTABLE_ENTRIES:
+            raise ValueError("entrytype should be L- or RGAZE")
         super(GazeEntry, self).__init__(entrytype, eyetime)
         ## the x coordinate of the gaze sample
         self.x = x
@@ -265,6 +272,11 @@ class AscGazeEntry(LogEntry):
 # and the duration of the fixation.
 class FixationEntry(LogEntry):
 
+    ACCEPTABLE_ENTRIES = [
+        LogEntry.LFIX,
+        LogEntry.RFIX
+    ]
+
     ##
     # Init a fixation entry
     #
@@ -274,6 +286,8 @@ class FixationEntry(LogEntry):
     # \param x          The x coordinate of the fixation
     # \param y          The y coordinate of the fixation
     def __init__(self, entrytype, eyetime, eyedur, x, y):
+        if not entrytype in FixationEntry.ACCEPTABLE_ENTRIES:
+            raise ValueError("entrytype should be LFIX or RFIX")
         super(FixationEntry,self).__init__(entrytype, eyetime)
         self.x = x
         ## the y coordinate of this fixation
@@ -365,10 +379,15 @@ class MessageEntry(LogEntry):
 # A saccade is defined by its eye, a starttime, duration and start and end position
 class SaccadeEntry(LogEntry):
 
+    ACCEPTABLE_ENTRIES = [
+        LogEntry.LSAC,
+        LogEntry.RSAC
+    ]
+
     ##
     # Initialize a SaccadeEntry
     #
-    # \param et must be LogEntry.LSAC or LogEntry.ESAC
+    # \param et must be LogEntry.LSAC or LogEntry.RSAC
     # \param eyetime the time (ms) on eyetracker when the saccade started
     # \param duration the duration(ms) of the saccade
     # \param xstart starting x coordinate.
@@ -384,6 +403,8 @@ class SaccadeEntry(LogEntry):
                  xend,
                  yend
                  ):
+        if not et in SaccadeEntry.ACCEPTABLE_ENTRIES:
+            raise ValueError("entrytype should be L- or RSAC")
         super(SaccadeEntry, self).__init__(et, eyetime)
         ## x coordinate of the start
         self.xstart = xstart
