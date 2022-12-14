@@ -44,17 +44,6 @@ _elogfix = 'g+'  # :end log fix
 _logfixcol = 'm-'  # :logged fixation color (for comparison with our fixations)
 
 
-def gcd_iter(u, v):
-    '''
-    Compute greatest common denominator
-    Source: http://rosettacode.org/wiki/Greatest_common_divisor#Iterative_Euclid_algorithm_10
-    date: 12 nov 2015
-    '''
-    while v:
-        u, v = v, u % v
-    return abs(u)
-
-
 ##
 # A plot to create to visualize content within a Qt program
 #
@@ -264,8 +253,6 @@ class GazePlotWidget(FigureCanvas):
 
         else:
             s = img.shape
-            # g = gcd_iter(s[0], s[1])
-            # self.figure.set_size_inches(s[0]/g, s[1]/g)
             self.axgaze.set_ylim(s[0], 0)
             self.axgaze.set_xlim(0, s[1])
             self.axgaze.imshow(img, zorder=0, interpolation='nearest')
