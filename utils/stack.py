@@ -25,13 +25,14 @@ class Stack(object):
         ## return a string from self
         def __str__(self):
             return self.msg
+
     ##
     # Init a new stack
     #
     # \param items an iterable, the last item will be the first to be popped.
     # \param maxitems the maximum size of the stack.
     #
-    def __init__ (self, items=None, maxitems=-1):
+    def __init__(self, items=None, maxitems=-1):
         ## A list that holds the items for the stack
         self._s = []
         ## The maximum number of items or infinite if maxitems < 0
@@ -41,22 +42,22 @@ class Stack(object):
 
         # Throw away the abundant items.
         if self._maxitems >= 0:
-            self._s = self._s[len(self._s) - self._maxitems :]
+            self._s = self._s[len(self._s) - self._maxitems:]
 
     ##
     # pop the last item from the stack
     #
-    # \throw  StackEmpty 
+    # \throw  StackEmpty
     # \return the last push item
     def pop(self):
-        if len(self._s) <=0 :
+        if len(self._s) <= 0:
             raise Stack.StackEmpty(len(self._s))
         return self._s.pop()
 
     ##
     # push a new item to the stack
     #
-    # Pushes a new item to the stack, if the stack becomes greater than the 
+    # Pushes a new item to the stack, if the stack becomes greater than the
     # maximum the items that were added firstly will be removed silently.
     #
     # \param item a new item for on the stack
@@ -76,15 +77,15 @@ class Stack(object):
     def top(self):
         if len(self._s) == 0:
             raise Stack.StackEmpty(len(self._s))
-        return self._s[len(self._s)-1]
+        return self._s[len(self._s) - 1]
 
     ##
     # set the maximum allowed size of a Stack
     def setMaxSize(self, length):
-        l = int(length)
-        self._maxitems = l
+        length = int(length)
+        self._maxitems = length
         if self._maxitems >= 0:
-            self._s = self._s[len(self._s) - self._maxitems :]
+            self._s = self._s[len(self._s) - self._maxitems:]
 
     ##
     # create a string of itself
@@ -107,20 +108,15 @@ class Stack(object):
         return iter(reversed(self._s))
 
     ##
-    # return the size of the collection
-    def __len__(self):
-        return len(self._s)
-
-    ##
     # shrinks the stack
     #
     # Shrinks the stack by removing the newest indices first
-    # \param index 
+    # \param index
     def shrink(self, index):
         if index > len(self):
             self._s = []
         else:
-            self._s = self._s[0:len(self._s)-index]
+            self._s = self._s[0:len(self._s) - index]
 
     ##
     # returns the nth item on the stack
@@ -128,28 +124,28 @@ class Stack(object):
     # return the nth item on the stack and where 0 is the last pushed item
     # and len(Stack) - 1 is the first item.
     def __getitem__(self, index):
-        index = len(self)-(index+1)
-        assert(index >= 0 and index < len(self))
+        index = len(self) - (index + 1)
+        assert index >= 0 and index < len(self)
         return self._s[index]
 
 
 if __name__ == "__main__":
-    s = Stack([1,2,3], 2)
+    s = Stack([1, 2, 3], 2)
     print(s)
     s.push(1)
     try:
         while len(s) >= 0:
-            print (s.pop(), " ")
+            print(s.pop(), " ")
     except Stack.StackEmpty as e:
         print(str(e))
     print()
 
-    s = Stack (["Amateur", "Does", "Get", "Better", "Eventually"])
+    s = Stack(["Amateur", "Does", "Get", "Better", "Eventually"])
     print(s)
     s.push("Every")
     print(s)
     for i in s:
-        print (i, " ")
+        print(i, " ")
     print()
 
     s.pop()
@@ -161,6 +157,5 @@ if __name__ == "__main__":
     s.setMaxSize(3)
     print(s)
 
-    assert(s.top() is s.pop())
-    assert(not (s.pop() is s.top()))
-    
+    assert s.top() is s.pop()
+    assert not (s.pop() is s.top())
