@@ -3,8 +3,8 @@
 from PyQt5 import QtGui, QtWidgets
 from PyQt5 import QtCore
 
-from log.eyedata import LogEntry
-from log.eyeexperiment import EyeExperiment, EyeData
+from log.eyedata import LogEntry, EyeData
+from log.eyeexperiment import EyeExperiment
 from log.parseeyefile import parseEyeFile
 from log.eyelog import saveForFixation
 from . import inspecteyedataview
