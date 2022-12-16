@@ -4,7 +4,7 @@
 # \file eyeexperiment.py handles all eyeevents in an experiment
 #
 
-from .eyelog import *
+from .eyelog import LogEntry
 import re
 
 
@@ -14,72 +14,74 @@ import re
 # In a log, all events are ordered in time. The eyetrial separates
 # all events in logical event types. And optionally stores
 # the presented stimulus.
-# 
+#
 class EyeTrial(object):
-    
+
     ##
     # initializes an empty trial
     def __init__(self):
         ## The filename of the stimulus
         self.stimulus = None
         ## The entries of the left gaze samples
-        self.lgaze  = []
+        self.lgaze = []
         ## The entries of the right gaze samples
-        self.rgaze  = []
+        self.rgaze = []
         ## The left fixation entries as determined by iSpector
-        self.lfix   = []
+        self.lfix = []
         ## The right fixation entries as determined by iSpector
-        self.rfix   = []
+        self.rfix = []
         ## The average fixations entries as determined by iSpector
         self.avgfix = []
         ## the logged fixations by the eyetracker of the left eye
-        self.loglfix= []
+        self.loglfix = []
         ## the logged fixations by the eyetracker of the right eye
-        self.logrfix= []
+        self.logrfix = []
         ## the logged fixations by the eyetracker of the average eye signal
-        self.logavgfix= []
+        self.logavgfix = []
         ## the saccades of the left eye determined by iSpector
-        self.lsac   = []
+        self.lsac = []
         ## the saccades of the right eye determined by iSpector
-        self.rsac   = []
+        self.rsac = []
         ## the saccades of the average eye determined by iSpector
-        self.avgsac   = []
+        self.avgsac = []
         ## the logged saccades by the eyetracker of the left eye
-        self.loglsac= []
+        self.loglsac = []
         ## the logged saccades by the eyetracker of the right eye
-        self.logrsac= []
+        self.logrsac = []
         ## the logged saccades by the eyetracker of the right eye
-        self.logavgsac= []
+        self.logavgsac = []
         ## meta trial information or samples that are precede the trial start
-        self.meta   = []
+        self.meta = []
 
     ##
     # Creates a deep copy of the EyeTrial.
     def copy(self):
-        cstim       = str(self.stimulus)
-        clgaze      = [gaze.copy() for gaze in self.lgaze]
-        crgaze      = [gaze.copy() for gaze in self.rgaze]
-        clfix       = [fix.copy() for fix in self.lfix]
-        crfix       = [fix.copy() for fix in self.rfix]
-        cavgfix     = [fix.copy() for fix in self.avgfix]
-        cloglfix    = [fix.copy() for fix in self.loglfix]
-        clogrfix    = [fix.copy() for fix in self.logrfix]
-        clogavgfix  = [fix.copy() for fix in self.logavgfix]
-        clsac       = [sac.copy() for sac in self.lsac]
-        crsac       = [sac.copy() for sac in self.rsac]
-        cavgsac     = [sac.copy() for sac in self.avgsac]
-        cloglsac    = [sac.copy() for sac in self.loglsac]
-        clogrsac    = [sac.copy() for sac in self.logrsac]
-        clogavgsac  = [sac.copy() for sac in self.logavgsac]
-        cmeta       = [meta.copy() for meta in self.meta]
+        cstim = str(self.stimulus)
+        clgaze = [gaze.copy() for gaze in self.lgaze]
+        crgaze = [gaze.copy() for gaze in self.rgaze]
+        clfix = [fix.copy() for fix in self.lfix]
+        crfix = [fix.copy() for fix in self.rfix]
+        cavgfix = [fix.copy() for fix in self.avgfix]
+        cloglfix = [fix.copy() for fix in self.loglfix]
+        clogrfix = [fix.copy() for fix in self.logrfix]
+        clogavgfix = [fix.copy() for fix in self.logavgfix]
+        clsac = [sac.copy() for sac in self.lsac]
+        crsac = [sac.copy() for sac in self.rsac]
+        cavgsac = [sac.copy() for sac in self.avgsac]
+        cloglsac = [sac.copy() for sac in self.loglsac]
+        clogrsac = [sac.copy() for sac in self.logrsac]
+        clogavgsac = [sac.copy() for sac in self.logavgsac]
+        cmeta = [meta.copy() for meta in self.meta]
 
         newcopy = EyeTrial()
         newcopy.stimulus = cstim
         newcopy.lgaze, newcopy.rgaze = clgaze, crgaze
         newcopy.lfix, newcopy.rfix, newcopy.avgfix = clfix, crfix, cavgfix
-        newcopy.loglfix, newcopy.logrfix, newcopy.logavgfix = cloglfix, clogrfix, clogavgfix
+        newcopy.loglfix, newcopy.logrfix, newcopy.logavgfix = \
+            cloglfix, clogrfix, clogavgfix
         newcopy.lsac, newcopy.rsac, newcopy.avgsac = clsac, crsac, cavgsac
-        newcopy.loglsac, newcopy.logrsac, newcopy.logavgsac = cloglsac, clogrsac, clogavgsac
+        newcopy.loglsac, newcopy.logrsac, newcopy.logavgsac = \
+            cloglsac, clogrsac, clogavgsac
         newcopy.meta = cmeta
 
         return newcopy
@@ -94,14 +96,14 @@ class EyeTrial(object):
             return False
         else:
             return self.__dict__ == rhs.__dict__
-    
+
     ##
     # instance inequality
     #
     # \return True if two instances of EyeTrial are not equal, false otherwise.
     def __ne__(self, rhs):
         return not (self == rhs)
-    
+
     ## Add a LogEntry to this trial
     #
     # @param entry A logentry of type LGAZE, RGAZE, LFIX or RFIX
@@ -121,12 +123,12 @@ class EyeTrial(object):
             self.logrsac.append(entry)
         else:
             raise ValueError("Invalid type of logentry added to EyeTrial.")
-    
+
     ##
     # Add meta data to trial
     def addMeta(self, meta):
         self.meta.append(meta)
-    
+
     ##
     # Set the stimulus for this file
     def setStimulus(self, name):
@@ -172,10 +174,10 @@ class EyeTrial(object):
             whether the data is from the left or the right eye.
             this function maps right gaze to left fixations or vice versa.
         '''
-        if len(self.logrfix) > 0 and len(self.lgaze) > 0 and len(self.rgaze) == 0:
+        if len(self.logrfix) and len(self.lgaze) and len(self.rgaze) == 0:
             self.rgaze = self.lgaze
             self.lgaze = []
-        elif len(self.loglfix) > 0 and len(self.rgaze) > 0 and len(self.lgaze) == 0:
+        elif len(self.loglfix) and len(self.rgaze) and len(self.lgaze) == 0:
             self.lgaze = self.rgaze
             self.rgaze = []
 
@@ -185,7 +187,7 @@ class EyeTrial(object):
            to the first sample and adepts the duration.
         '''
         refgaze = []
-        if (not self.lgaze and not self.rgaze) :
+        if (not self.lgaze and not self.rgaze):
             raise RuntimeError("Can't fix fixations without gazedata.")
         elif self.lgaze:
             refgaze = self.lgaze
@@ -202,14 +204,14 @@ class EyeTrial(object):
                 self._fixFistFixation(self.logrfix[0], refgaze[0])
             elif self.logrfix[0].getEyeTime() < self.rgaze[0].getEyeTime():
                 self._fixFistFixation(self.logrfix[0], self.rgaze[0])
-    
+
     def _fixFistFixation(self, fix, sample):
         ''' fixes fix to match the sample. '''
         fixstart = fix.getEyeTime()
         gazestart = sample.getEyeTime()
         diff = gazestart - fixstart
         if diff <= 0:
-            return # nothing to fix
+            return  # nothing to fix
         else:
             fix.eyetime += diff
             fix.duration -= diff
@@ -251,6 +253,7 @@ class EyeTrial(object):
         ret += self.meta
         return ret
 
+
 ##
 # EyeExperiment contains all the EyeTrial of one experiment
 #
@@ -267,7 +270,7 @@ class EyeExperiment(object):
         if firstword != "trialbeg":
             return False
         return True
-    
+
     ##
     # Determines if a LogEntry marks a trial begin
     #
@@ -309,12 +312,9 @@ class EyeExperiment(object):
     #
     def _isTrialEntry(self, entry):
         n = entry.getEntryType()
-        if ( n == LogEntry.RGAZE   or
-             n == LogEntry.LGAZE   or
-             n == LogEntry.RFIX    or
-             n == LogEntry.LFIX    or
-             n == LogEntry.RSAC    or
-             n == LogEntry.LSAC):
+        if n in [LogEntry.RGAZE, LogEntry.LGAZE,
+                 LogEntry.RFIX, LogEntry.LFIX,
+                 LogEntry.RSAC, LogEntry.LSAC]:
             return True
         return False
 
@@ -329,14 +329,16 @@ class EyeExperiment(object):
     def __init__(self, entries):
         ## All EyeTrials of an experiment
         self.trials = []
-        ## messages written before a experiment is started. Meta data of an experiment
+
+        ## messages written before a experiment is started.
+        # Meta data of an experiment
         self.meta = []
         havestart = False
         foundsync = False
         trial = None
         tempmeta = []
         for i in entries:
-            if trial and self._isTrialEntry(i) and foundsync :
+            if trial and self._isTrialEntry(i) and foundsync:
                 trial.addEntry(i)
                 continue
             else:
@@ -347,7 +349,7 @@ class EyeExperiment(object):
                         trial.addMeta(m)
                     tempmeta = []
                     trial.addMeta(i)
-            if havestart == False:
+            if not havestart:
                 if self._isTrialBegin(i):
                     havestart = True
                 else:
@@ -357,7 +359,7 @@ class EyeExperiment(object):
             if self._isTrialBegin(i):
                 trial = EyeTrial()
             if self._isTrialEnd(i):
-                if trial == None:
+                if not trial:
                     raise RuntimeError("Encountered trialend without trialbeg")
                 trial.addMeta(i)
                 self.trials.append(trial)
@@ -365,18 +367,18 @@ class EyeExperiment(object):
                 foundsync = False
                 continue
             if self._isPla(i):
-                if trial == None:
+                if trial is not None:
                     raise RuntimeError("Encountered pla without trialbeg")
                 trial.setStimulus(i.message.split()[1])
             if self._isSync(i):
                 foundsync = True
 
         for t in self.trials:
-            #if t.isMonocular():
-            #    t.matchFixationsToSamples()
+            # if t.isMonocular():
+            #     t.matchFixationsToSamples()
             if t.containsLogFixations() and t.containsGazeData():
                 t.fixFirstFix()
-    
+
     ##
     # Examines whether to experiments hold equal data.
     #
@@ -398,24 +400,27 @@ class EyeExperiment(object):
     ##
     # This function is for Fixation compatibility.
     #
-    # it reads the meta data and extracts the 
+    # it reads the meta data and extracts the
     # useful parameters.
-    # returns string with filename that is suitable for fixation tool (Cozijn 1996)
+    # returns string with filename that is suitable for
+    # fixation tool (Cozijn 1996)
     #
     # \deprecated
     #
     # \return a string that Fixation likes as input filename
     def getFixationName(self):
-        exp_name    = ""
+        exp_name = ""
         subject_num = 0
-        list_name   = 0 
-        block_name  = 0
-        matchflags = re.I # ingnore case
-        re_exp_name     = re.compile(r'experiment:\s+(.*)',             matchflags)
-        re_subject_num  = re.compile(r'participant:\s+[A-Za-z]*(\d.*)', matchflags)
-        re_dummy_num    = re.compile(r'participant:\s+dummy',           matchflags)
-        re_list_name    = re.compile(r'list:\s+(.*)',                   matchflags)
-        re_block_name   = re.compile(r'recording:\s+(.*)',              matchflags)
+        list_name = 0
+        block_name = 0
+        matchflags = re.I  # ignore case
+        re_exp_name = re.compile(r'experiment:\s+(.*)', matchflags)
+        re_subject_num = re.compile(
+            r'participant:\s+[A-Za-z]*(\d.*)', matchflags
+        )
+        re_dummy_num = re.compile(r'participant:\s+dummy', matchflags)
+        re_list_name = re.compile(r'list:\s+(.*)', matchflags)
+        re_block_name = re.compile(r'recording:\s+(.*)', matchflags)
 
         for i in self.meta:
             m = re_exp_name.match(i.message)
@@ -440,11 +445,12 @@ class EyeExperiment(object):
                                                        block_name,
                                                        subject_num)
         return retval
-    
+
     ##
     # Returns a list of events in the trial.
     #
-    # \returns a list of logentries of an experiment, the events are not sorted.
+    # \returns a list of logentries of an experiment,
+    # the events are not sorted.
     def getEntries(self):
         ret = []
         ret += self.meta
