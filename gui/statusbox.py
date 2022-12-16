@@ -65,4 +65,3 @@ class StatusBox (QtWidgets.QListWidget):
     # @param message an instance of StatusMessage
     def addMessage(self, message):
         self.insertItem(0, StatusBoxMessage(message))
-        

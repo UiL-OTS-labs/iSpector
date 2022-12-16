@@ -760,8 +760,8 @@ class FixationUpdateCanvas(
             pen = QtGui.QPen(color)
             painter.setPen(pen)
             for sac in saccades:
-                p1 = QtCore.QPoint(sac.xstart, sac.ystart)
-                p2 = QtCore.QPoint(sac.xend, sac.yend)
+                p1 = QtCore.QPoint(int(sac.xstart), int(sac.ystart))
+                p2 = QtCore.QPoint(int(sac.xend), int(sac.yend))
                 painter.drawLine(p1, p2)
             painter.restore()
 
