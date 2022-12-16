@@ -14,13 +14,14 @@ from . import datamodel
 from . import savedialog
 import os
 
+
 ##
 # CustomDataView
 #
 # CustomDataView shows one specific view on EyemovementData it is embedded
 # inside a DataView.
 class CustomDataView(object):
-    
+
     ##
     # Lets the CustomDataView to update itself
     #
@@ -41,43 +42,43 @@ class CustomDataView(object):
 # trial or experiment.
 #
 class DataView(QtWidgets.QWidget):
-    
+
     ##
     # inits a DataView
     #
     # \param [in] model an instance of the model this view is about to
     #             demonstrate
-    # \param [in] controller a controller the view can uses to update the model.
+    # \param [in] controller a controller the view can uses to update the model
     # \param [in] parent just passed to QWidget.__init__()
     # \param [in] flags the QtCore.Qt.WindowFlags
-    def __init__(self, model, controller, parent=None, flags=QtCore.Qt.Window) :
+    def __init__(self, model, controller, parent=None, flags=QtCore.Qt.Window):
         super(DataView, self).__init__(parent=parent, flags=flags)
         ## a reference to the main window
-        self.MAINWINDOW     = parent
+        self.MAINWINDOW = parent
         ## the datamodel of this class
-        self.MODEL          = model
-        assert(isinstance(self.MODEL, datamodel.DataModel))
+        self.MODEL = model
+        assert isinstance(self.MODEL, datamodel.DataModel)
         ## the controller for updating the MODEL
-        self.controller     = controller
+        self.controller = controller
 
         ## This widget will be placed in the top part of the view.
-        self.custom_widget  = None
+        self.custom_widget = None
 
-        # Add the custom widget as defined by derived class to the 
+        # Add the custom widget as defined by derived class to the
         self.initCustomWidget()
-        assert(self.custom_widget != None)
-        assert(isinstance(self.custom_widget, CustomDataView))
+        assert self.custom_widget is not None
+        assert isinstance(self.custom_widget, CustomDataView)
 
         # Make us know to the model, so the model also has an idea who it's
         # talking to.
         self.MODEL.setView(self)
-        
+
         # initializes the gui
         self._initGui()
 
         # updates the entire view.
         self.updateFromModel()
-    
+
     ##
     # initialize the custom widget.
     #
@@ -113,14 +114,13 @@ class DataView(QtWidgets.QWidget):
     #
     def _initGui(self):
         grid = QtWidgets.QGridLayout()
-        tabview = QtWidgets.QTabWidget()
 
-        grid.addWidget(self.custom_widget, 0,0, 1, -1)
+        grid.addWidget(self.custom_widget, 0, 0, 1, -1)
 
         button = QtWidgets.QPushButton('<-')
         button.setToolTip("Previous trial")
         button.clicked.connect(self.prevTrial)
-        grid.addWidget(button, 1,0)
+        grid.addWidget(button, 1, 0)
 
         button = QtWidgets.QPushButton('->')
         button.setToolTip("Next trial")
@@ -133,18 +133,18 @@ class DataView(QtWidgets.QWidget):
         self.fileslider.setToolTip("File slider")
 
         ## The slider used to navigate through the trials.
-        self.trialslider= QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.trialslider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.trialslider.setMinimum(1)
         self.trialslider.setToolTip("Trial slider")
-        
+
         self.fileslider.sliderReleased.connect(self.fileSliderChanged)
         self.trialslider.sliderReleased.connect(self.trialSliderChanged)
 
         grid.addWidget(self.trialslider, 1, 1)
-        grid.addWidget(self.fileslider , 2, 1)
-        assert(self.custom_widget != None)
+        grid.addWidget(self.fileslider, 2, 1)
+        assert self.custom_widget is not None
         grid.addWidget(self.custom_widget, 0, 0, 1, -1)
-        
+
         self.setLayout(grid)
         self.show()
 
@@ -157,7 +157,7 @@ class DataView(QtWidgets.QWidget):
             self.controller.reload()
             self.updateFromModel()
         return super(DataView, self).keyPressEvent(event)
-    
+
     ##
     # Sets sliders the the value mentionned in the model.
     #
@@ -165,20 +165,20 @@ class DataView(QtWidgets.QWidget):
     # This function modifies the slider setting to match the model.
     #
     def updateSliders(self):
-        nfiles = len(self.MODEL.files) 
+        nfiles = len(self.MODEL.files)
         if nfiles > 1:
             self.fileslider.show()
             if self.fileslider.maximum() != nfiles:
                 self.fileslider.setMaximum(nfiles)
-            if self.fileslider.value() != self.MODEL.fileindex+1:
-                self.fileslider.setValue(self.MODEL.fileindex+1)
+            if self.fileslider.value() != self.MODEL.fileindex + 1:
+                self.fileslider.setValue(self.MODEL.fileindex + 1)
         else:
             self.fileslider.hide()
 
         if self.trialslider.maximum() != len(self.MODEL.trials):
             self.trialslider.setMaximum(len(self.MODEL.trials))
-        if self.trialslider.value() != self.MODEL.trialindex+1:
-            self.trialslider.setValue(self.MODEL.trialindex+1)
+        if self.trialslider.value() != self.MODEL.trialindex + 1:
+            self.trialslider.setValue(self.MODEL.trialindex + 1)
 
     ##
     # Updates the trial name.
@@ -189,7 +189,7 @@ class DataView(QtWidgets.QWidget):
         if not self.hasValidData():
             title += " (NO VALID DATA IN TRIAL)"
         self.setWindowTitle(title)
-    
+
     ##
     # updates the view, to be consistent with the model
     def updateFromModel(self):
@@ -216,20 +216,21 @@ class DataView(QtWidgets.QWidget):
     def nextTrial(self):
         self.controller.nextTrial()
         self.updateFromModel()
-    
+
     ##
     # Callback that is called when the user presses the previous trial button
     def prevTrial(self):
         self.controller.prevTrial()
         self.updateFromModel()
 
+
 ##
 # Like DataView, but also usable to edit the experimental data.
-# 
+#
 # Does almost the same as dataview, however it tries to save the data if the
 # user navigates to a new experiment, or when the view is closed.
 class EditDataView(DataView):
-    
+
     ##
     # Makes the controller save the experiment
     #
@@ -238,14 +239,14 @@ class EditDataView(DataView):
         cur = self.MODEL.getCurrentFileName()
         Dir = os.path.dirname(cur)
         fn, _unused = QtWidgets.QFileDialog.getSaveFileName(
-                caption          = "Select or enter savefile name.",
-                directory        = Dir,
-                filter           = "EyeData (*.csv *.asc);;all (*)",
-                initialFilter    = "EyeData"
-                )
+            caption="Select or enter savefile name.",
+            directory=Dir,
+            filter="EyeData (*.csv *.asc);;all (*)",
+            initialFilter="EyeData"
+        )
         if fn:
             self.controller.saveExperiment(fn, True)
- 
+
     ##
     # Determine whether we must save the current experiment.
     #
@@ -258,17 +259,17 @@ class EditDataView(DataView):
     # closing of the window or going to the next trial
     def determineSaveExperiment(self):
         if self.MODEL.isExperimentModified() or self.MODEL.isTrialModified():
-            #import pdb
-            #pdb.set_trace()
+            # import pdb
+            # pdb.set_trace()
             dlg = savedialog.SaveDialog()
             ret = dlg.exec_()
-            if      ret == dlg.Save:
+            if ret == dlg.Save:
                 self.save()
-            elif    ret == dlg.Cancel:
+            elif ret == dlg.Cancel:
                 return False
-            #if ret is dlg.Discard just return True
+            # if ret is dlg.Discard just return True
         return True
-    
+
     ##
     # Determines whether the experiment must be saved, and whether
     # to advance to the next trial.
@@ -279,7 +280,7 @@ class EditDataView(DataView):
             else:
                 return
         return super(EditDataView, self).nextTrial()
-    
+
     ##
     # Determines whether the experiment must be saved, and whether
     # to return to the previous trial.
@@ -315,7 +316,7 @@ class EditDataView(DataView):
             handled = True
             if event.key() == QtCore.Qt.Key_Z:
                 self.controller.undoEdit()
-            elif event.key() == QtCore.Qt.Key_R or event.key() == QtCore.Qt.Key_Y:
+            elif event.key() in [QtCore.Qt.Key_R, QtCore.Qt.Key_Y]:
                 self.controller.redoEdit()
             elif event.key() == QtCore.Qt.Key_S:
                 self.determineSaveExperiment()
@@ -324,11 +325,10 @@ class EditDataView(DataView):
         elif event.modifiers() == QtCore.Qt.NoModifier:
             handled = True
             if event.key() == QtCore.Qt.Key_F5:
-                handled == True ## we just want to update from the model
+                handled = True  ## we just want to update from the model
             else:
                 handled = False
         if handled:
             self.updateFromModel()
         else:
             super(EditDataView, self).keyPressEvent(event)
-

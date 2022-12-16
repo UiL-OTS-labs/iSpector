@@ -359,7 +359,7 @@ class EyeExperiment(object):
             if self._isTrialBegin(i):
                 trial = EyeTrial()
             if self._isTrialEnd(i):
-                if not trial:
+                if trial is None:
                     raise RuntimeError("Encountered trialend without trialbeg")
                 trial.addMeta(i)
                 self.trials.append(trial)
@@ -367,7 +367,7 @@ class EyeExperiment(object):
                 foundsync = False
                 continue
             if self._isPla(i):
-                if trial is not None:
+                if trial is None:
                     raise RuntimeError("Encountered pla without trialbeg")
                 trial.setStimulus(i.message.split()[1])
             if self._isSync(i):

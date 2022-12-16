@@ -38,22 +38,24 @@ def getLogEntry(splitline):
     elif n == LogEntry.LFIX or n == LogEntry.RFIX:
         if len(splitline) != 5:
             raise ValueError("Fixation entry must contain 5 columns")
-        e, eyetime, x, y, dur = int(line[0]),\
-                                float(line[1]),\
-                                float(line[2]),\
-                                float(line[3]),\
-                                float(line[4])
+        e, eyetime, x, y, dur = \
+            int(line[0]),\
+            float(line[1]),\
+            float(line[2]),\
+            float(line[3]),\
+            float(line[4])
 
         entry = FixationEntry(e, eyetime, dur, x, y)
     elif n == LogEntry.LSAC or n == LogEntry.RSAC:
         if len(splitline) != 6:
             raise ValueError("SaccadeEntry must contain 6 columns")
-        e, eyetime, x1, y1, x2, y2, dur = int(line[0]), \
-                                          float(line[1]), \
-                                          float(line[2]), \
-                                          float(line[3]), \
-                                          float(line[4]), \
-                                          float(line[5])
+        e, eyetime, x1, y1, x2, y2, dur = \
+            int(line[0]), \
+            float(line[1]), \
+            float(line[2]), \
+            float(line[3]), \
+            float(line[4]), \
+            float(line[5])
         entry = SaccadeEntry(e, eyetime, dur, x1, y1, x2, y2)
     elif n == LogEntry.STIMULUS:
         # FIXME

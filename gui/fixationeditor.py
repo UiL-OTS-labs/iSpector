@@ -41,7 +41,8 @@ class _TranslateFix(object):
     #
     # \param x[in]   translate value for x coordinate
     # \param y[in]   translate value for y coordinate
-    # \param ref[in] A reference fixation or None, than all fixations are mapped
+    # \param ref[in] A reference fixation or None, than all fixations are
+    # mapped
     def __init__(self, x, y, ref=None):
         ## Reference fixation
         self._ref = ref
@@ -98,7 +99,8 @@ class FixationDataEdit(object):
     ##
     # \param [in] lfix an iterable with fixations of the left eye (or None)
     # \param [in] rfix an iterable with fixations of the right eye (or None)
-    # \param [in] avgfix an iterable with fixations of the average eye (or None)
+    # \param [in] avgfix an iterable with fixations of the average eye
+    #             (or None)
     # \param [in] lsac an iterable with saccades of the left eye (or None)
     # \param [in] rsac an iterable with saccades of the right eye (or None)
     # \param [in] avgsac an iterable with saccades of the average eye (or None)
@@ -110,7 +112,7 @@ class FixationDataEdit(object):
                  rsac,
                  avgsac,
                  ):
-        
+
         ## left fixations
         self.lfix = None
         ## right fixations
@@ -204,7 +206,8 @@ class FixationEditController(datamodel.EditDataController):
         if event.button() == QtCore.Qt.LeftButton:
             self.release_time = time.time()
             self.release_event = event
-            if self.press_event and self.release_time - self.press_time < self.click_time / 1000:
+            if self.press_event and \
+                    self.release_time - self.press_time < self.click_time / 1000:
                 self._registerClick(event)
             elif self.lb_pressed:
                 self.saveEdit(event)
@@ -265,7 +268,7 @@ class FixationEditController(datamodel.EditDataController):
     # The other fixations will NOT be deselected
     def deselectNearest(self, x, y):
         nearest = copy.deepcopy(self.model.selectFixation(x, y))
-        selected = self.model.deselectFixation(nearest)
+        self.model.deselectFixation(nearest)
 
     ##
     # selects all the visible fixations
@@ -317,7 +320,7 @@ class FixationEditController(datamodel.EditDataController):
 # \todo The main model has an fix that want to show
 #       eyes that doesn't support the avg signal
 #       it should be implemented there and
-#       _show_eye should be removed here. 
+#       _show_eye should be removed here.
 class FixationEditModel(datamodel.EditDataModel):
 
     ##

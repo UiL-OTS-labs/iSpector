@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
-## 
-# \file eyewindow.py 
+##
+# \file eyewindow.py
 #
 
-
-from PyQt5 import QtGui
+from PyQt5 import QtGui, QtCore
 from eyeoutputqt import ExamineDataModel
+from datamodel import ExamineDataController
+
 
 class EyeWindow (QtGui.QWidget):
     '''
@@ -17,7 +18,7 @@ class EyeWindow (QtGui.QWidget):
     def __init__(self, files, parent):
         super(EyeWindow, self).__init__(parent=parent, flags=QtCore.Qt.Window)
         self.MAINWINDOW = parent
-        self.MODEL      = ExamineDataModel(files, parent)
+        self.MODEL = ExamineDataModel(files, parent)
         if not self.MODEL.eyedata:
             self.MAINWINDOW
             QtGui.QApplication.postEvent(self, QtGui.QCloseEvent())
@@ -34,12 +35,12 @@ class EyeWindow (QtGui.QWidget):
         tabview = QtGui.QTabWidget()
         self.tabview = tabview
 
-        grid.addWidget(tabview, 0,0, 1, -1)
+        grid.addWidget(tabview, 0, 0, 1, -1)
 
         button = QtGui.QPushButton('<-')
         button.setToolTip("Previouw trial")
         button.clicked.connect(self.prevTrial)
-        grid.addWidget(button, 1,0)
+        grid.addWidget(button, 1, 0)
 
         button = QtGui.QPushButton('->')
         button.setToolTip("Next trial")
@@ -49,10 +50,9 @@ class EyeWindow (QtGui.QWidget):
         self.fileslider = QtGui.QSlider(QtCore.Qt.Horizontal)
         self.fileslider.setMinimum(1)
         self.fileslider.setToolTip("File slider")
-        self.trialslider= QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.trialslider = QtGui.QSlider(QtCore.Qt.Horizontal)
         self.trialslider.setMinimum(1)
         self.trialslider.setToolTip("Trial slider")
-        
+
         self.fileslider.sliderReleased.connect(self.fileSliderChanged)
         self.trialslider.sliderReleased.connect(self.trialSliderChanged)
-        
