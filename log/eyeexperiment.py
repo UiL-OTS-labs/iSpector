@@ -195,17 +195,17 @@ class EyeTrial(object):
             refgaze = self.rgaze
         if len(self.loglfix) > 0:
             if len(self.lgaze) == 0:
-                self._fixFistFixation(self.loglfix[0], refgaze[0])
+                self._fixFirstFixation(self.loglfix[0], refgaze[0])
             elif self.loglfix[0].getEyeTime() < self.lgaze[0].getEyeTime():
-                self._fixFistFixation(self.loglfix[0], self.lgaze[0])
+                self._fixFirstFixation(self.loglfix[0], self.lgaze[0])
 
         if len(self.logrfix) > 0:
             if len(self.rgaze) == 0:
-                self._fixFistFixation(self.logrfix[0], refgaze[0])
+                self._fixFirstFixation(self.logrfix[0], refgaze[0])
             elif self.logrfix[0].getEyeTime() < self.rgaze[0].getEyeTime():
-                self._fixFistFixation(self.logrfix[0], self.rgaze[0])
+                self._fixFirstFixation(self.logrfix[0], self.rgaze[0])
 
-    def _fixFistFixation(self, fix, sample):
+    def _fixFirstFixation(self, fix, sample):
         ''' fixes fix to match the sample. '''
         fixstart = fix.getEyeTime()
         gazestart = sample.getEyeTime()
