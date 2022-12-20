@@ -1,25 +1,28 @@
 #!/usr/bin/env python
 
-##
-# \file eyeexperiment.py handles all eyeevents in an experiment
-#
+'''
+@package eyeexperiment
+This file contains the implementation of Data contents of an eyetracker
+experiment. It currently consists of an EyeExperiment, that contains
+EyeTrials
+
+@file eyeexperiment.py handles all eyeevents in an experiment
+'''
 
 from .eyelog import LogEntry
 import re
 
 
-##
-# An EyeTrial contains all events in a single trials in a experiment
-#
-# In a log, all events are ordered in time. The eyetrial separates
-# all events in logical event types. And optionally stores
-# the presented stimulus.
-#
 class EyeTrial(object):
+    '''An EyeTrial contains all events in a single trials in a experiment
 
-    ##
-    # initializes an empty trial
+    In a log, all events are ordered in time. The eyetrial separates
+    all events in logical event types. And optionally stores
+    the presented stimulus.
+    '''
+
     def __init__(self):
+        '''initializes an empty trial'''
         ## The filename of the stimulus
         self.stimulus = None
         ## The entries of the left gaze samples
@@ -53,9 +56,8 @@ class EyeTrial(object):
         ## meta trial information or samples that are precede the trial start
         self.meta = []
 
-    ##
-    # Creates a deep copy of the EyeTrial.
     def copy(self):
+        '''Creates a deep copy of the EyeTrial'''
         cstim = str(self.stimulus)
         clgaze = [gaze.copy() for gaze in self.lgaze]
         crgaze = [gaze.copy() for gaze in self.rgaze]
@@ -86,28 +88,28 @@ class EyeTrial(object):
 
         return newcopy
 
-    ##
-    # instance equality
-    #
-    # \return True if two instances of EyeTrial are equal, false otherwise.
     def __eq__(self, rhs):
+        '''instance equality
+
+        @return True if two instances of EyeTrial are equal, false otherwise.
+        '''
         types = type(self) is type(rhs)
         if not types:
             return False
         else:
             return self.__dict__ == rhs.__dict__
 
-    ##
-    # instance inequality
-    #
-    # \return True if two instances of EyeTrial are not equal, false otherwise.
     def __ne__(self, rhs):
+        '''
+        instance inequality
+        @return True if two instances of EyeTrial are not equal, false otherwise.
+        '''
         return not (self == rhs)
 
-    ## Add a LogEntry to this trial
-    #
-    # @param entry A logentry of type LGAZE, RGAZE, LFIX or RFIX
     def addEntry(self, entry):
+        '''Add a LogEntry to this trial
+        # @param entry A logentry of type LGAZE, RGAZE, LFIX or RFIX
+        '''
         n = entry.getEntryType()
         if n == LogEntry.LGAZE:
             self.lgaze.append(entry)
@@ -124,44 +126,38 @@ class EyeTrial(object):
         else:
             raise ValueError("Invalid type of logentry added to EyeTrial.")
 
-    ##
-    # Add meta data to trial
     def addMeta(self, meta):
+        '''Add meta data to trial'''
         self.meta.append(meta)
 
-    ##
-    # Set the stimulus for this file
     def setStimulus(self, name):
+        '''Set the stimulus for this file'''
         self.stimulus = name
 
-    ##
-    # Check whether this trial contains gaze samples
     def containsGazeData(self):
+        '''Check whether this trial contains gaze samples'''
         return (len(self.lgaze) != 0) or (len(self.rgaze) != 0)
 
-    ##
-    # Check whether this trial contains fixations
     def containsFixations(self):
+        '''Check whether this trial contains fixations'''
         return len(self.lfix) != 0 or len(self.rfix) != 0
 
-    ##
-    # Check whether this trial contains fixations not determined by iSpector
     def containsLogFixations(self):
+        '''Check whether this trial contains fixations not determined by
+        iSpector
+        '''
         return len(self.loglfix) > 0 or len(self.logrfix) > 0
 
-    ##
-    # Does this trial contain gaze sample of the left eye?
     def containsLeftData(self):
+        '''Does this trial contain gaze sample of the left eye?'''
         return len(self.lgaze) > 0
 
-    ##
-    # Does this trial contain gaze sample of the left eye?
     def containsRightData(self):
+        '''Does this trial contain gaze sample of the left eye?'''
         return len(self.rgaze) > 0
 
-    ##
-    # Checks whether the data is this trial is monocular
     def isMonocular(self):
+        '''Checks whether the data is this trial is monocular'''
         if len(self.lgaze) == 0 and len(self.rgaze) > 0:
             return True
         elif len(self.lgaze) > 0 and len(self.rgaze) == 0:
@@ -187,7 +183,7 @@ class EyeTrial(object):
            to the first sample and adepts the duration.
         '''
         refgaze = []
-        if (not self.lgaze and not self.rgaze):
+        if not self.lgaze and not self.rgaze:
             raise RuntimeError("Can't fix fixations without gazedata.")
         elif self.lgaze:
             refgaze = self.lgaze
@@ -216,11 +212,11 @@ class EyeTrial(object):
             fix.eyetime += diff
             fix.duration -= diff
 
-    ##
-    # obtain a list of entries that belong to this trial
-    #
-    # returns an unsorted list of entries inside this trial.
     def getEntries(self):
+        '''obtain a list of entries that belong to this trial
+
+        @returns an unsorted list of entries inside this trial.
+        '''
         ret = []
         if self.lgaze:
             ret += self.lgaze
@@ -254,16 +250,14 @@ class EyeTrial(object):
         return ret
 
 
-##
-# EyeExperiment contains all the EyeTrial of one experiment
-#
 class EyeExperiment(object):
+    '''EyeExperiment contains all the EyeTrial of one experiment'''
 
-    ##
-    # Determines if a LogEntry marks a trial begin
-    #
-    # @param entry a log.LogEntry
     def _isTrialBegin(self, entry):
+        '''Determines if a LogEntry marks a trial begin
+
+        @param entry a log.LogEntry
+        '''
         if entry.getEntryType() != LogEntry.MESSAGE:
             return False
         firstword = entry.message.split()[0]
@@ -271,11 +265,11 @@ class EyeExperiment(object):
             return False
         return True
 
-    ##
-    # Determines if a LogEntry marks a trial begin
-    #
-    # @param entry a log.LogEntry
     def _isTrialEnd(self, entry):
+        '''Determines if a LogEntry marks a trial begin
+
+        @param entry a log.LogEntry
+        '''
         if entry.getEntryType() != LogEntry.MESSAGE:
             return False
         firstword = entry.message.split()[0]
@@ -283,11 +277,11 @@ class EyeExperiment(object):
             return False
         return True
 
-    ##
-    # Determines if a LogEntry marks a stimulus
-    #
-    # @param entry a log.LogEntry
     def _isPla(self, entry):
+        '''Determines if a LogEntry marks a stimulus
+
+        @param entry a log.LogEntry
+        '''
         if entry.getEntryType() != LogEntry.MESSAGE:
             return False
         firstword = entry.message.split()[0]
@@ -295,11 +289,11 @@ class EyeExperiment(object):
             return False
         return True
 
-    ##
-    # Determines if a LogEntry marks a stimulus
-    #
-    # @param entry a log.LogEntry
     def _isSync(self, entry):
+        '''Determines if a LogEntry marks a stimulus
+
+        @param entry a log.LogEntry
+        '''
         if entry.getEntryType() != LogEntry.MESSAGE:
             return False
         firstword = entry.message.split()[0]
@@ -307,10 +301,8 @@ class EyeExperiment(object):
             return False
         return True
 
-    ##
-    # Determines if a Logentry should be added to a trial
-    #
     def _isTrialEntry(self, entry):
+        '''Determines if a Logentry should be added to a trial'''
         n = entry.getEntryType()
         if n in [LogEntry.RGAZE, LogEntry.LGAZE,
                  LogEntry.RFIX, LogEntry.LFIX,
@@ -318,15 +310,15 @@ class EyeExperiment(object):
             return True
         return False
 
-    ##
-    # Intializes an EyeExperiment by parsing a list of entries.
-    #
-    # An EyeExperiment is a collection of EyeTrials and a bit of meta data
-    # of an eyemovement experiment.
-    #
-    # @param entries a list of logentries from a logfile the entries
-    # should allready be sorted on time.
     def __init__(self, entries):
+        '''Intializes an EyeExperiment by parsing a list of entries.
+
+        An EyeExperiment is a collection of EyeTrials and a bit of meta data
+        of an eyemovement experiment.
+
+        @param entries a list of logentries from a logfile the entries
+        should already be sorted on time.
+        '''
         ## All EyeTrials of an experiment
         self.trials = []
 
@@ -379,36 +371,36 @@ class EyeExperiment(object):
             if t.containsLogFixations() and t.containsGazeData():
                 t.fixFirstFix()
 
-    ##
-    # Examines whether to experiments hold equal data.
-    #
-    # \returns True if they are identical, but False when they are not.
     def __eq__(self, rhs):
+        '''Examines whether to experiments hold equal data.
+
+        @returns True if they are identical, but False when they are not.
+        '''
         types = type(self) is type(rhs)
         if not types:
             return False
         else:
             return self.__dict__ == rhs.__dict__
 
-    ##
-    # Examines whether two experiments hold different data.
-    #
-    # \returns True if the two experiments are different
     def __ne__(self, rhs):
+        '''Examines whether two experiments hold different data.
+
+        @returns True if the two experiments are different
+        '''
         return not (self == rhs)
 
-    ##
-    # This function is for Fixation compatibility.
-    #
-    # it reads the meta data and extracts the
-    # useful parameters.
-    # returns string with filename that is suitable for
-    # fixation tool (Cozijn 1996)
-    #
-    # \deprecated
-    #
-    # \return a string that Fixation likes as input filename
     def getFixationName(self):
+        '''This function is for Fixation compatibility.
+
+        It reads the meta data and extracts the
+        useful parameters.
+        Returns string with filename that is suitable for
+        fixation tool (Cozijn 1996)
+
+        @deprecated
+
+        @return a string that Fixation likes as input filename
+        '''
         exp_name = ""
         subject_num = 0
         list_name = 0
@@ -446,12 +438,12 @@ class EyeExperiment(object):
                                                        subject_num)
         return retval
 
-    ##
-    # Returns a list of events in the trial.
-    #
-    # \returns a list of logentries of an experiment,
-    # the events are not sorted.
     def getEntries(self):
+        '''Returns a list of events in the trial.
+
+        @returns a list of logentries of an experiment,
+        the events are not sorted.
+        '''
         ret = []
         ret += self.meta
         for trial in self.trials:
