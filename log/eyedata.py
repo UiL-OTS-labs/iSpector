@@ -73,7 +73,7 @@ def getValueArray(gazentrylist, generator):
 
 class EyeData:
     '''
-    \brief Finds fixations and saccades in eyemovement signals
+    @brief Finds fixations and saccades in eyemovement signals
 
     This class uses an eyetrial to obtain the eyetracking data of
     one trial and is able to plot that data and generate the results.
