@@ -11,17 +11,17 @@ import os.path
 
 ##
 # Our name
-PROGRAM     = "iSpector"
+PROGRAM = "iSpector"
 ##
 # extension for a configuration file
-EXTENSION   = ".json"
+EXTENSION = ".json"
 ##
 # contains the directory where the configfile should be stored.
-DIR         = "dir"
+DIR = "dir"
 
 ##
 # a constant uset to obtain the recently used files from the config
-FILE_HIST   = "file_hist"
+FILE_HIST = "file_hist"
 
 ##
 # Name of config dir under linux / unix
@@ -29,9 +29,10 @@ UNIX_CONFIG_DIR = ".config"
 
 ##
 # constants used inside the json for the groups.
-STIMDIR     = "stimdir"
-FILEDIR     = "filedir"
-OUTPUTDIR   = "outputdir"
+STIMDIR = "stimdir"
+FILEDIR = "filedir"
+OUTPUTDIR = "outputdir"
+
 
 ##
 # This is the representation of the directories used by iSpector
@@ -42,16 +43,17 @@ class ConfigDir(dict):
     ##
     # initalizes a ConfigDir
     def __init__(self, stimdir="", filedir="", outputdir=""):
-        self[STIMDIR]     = stimdir
-        self[FILEDIR]     = filedir
-        self[OUTPUTDIR]   = outputdir
+        self[STIMDIR] = stimdir
+        self[FILEDIR] = filedir
+        self[OUTPUTDIR] = outputdir
+
 
 ##
 # This is a representation of configuration used by iSpector
 class ConfigFile (dict):
-    
+
     ##
-    # name of environmental variable that may hold the location where 
+    # name of environmental variable that may hold the location where
     # configuration data is stored.
     # https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
     # 2019
@@ -60,14 +62,13 @@ class ConfigFile (dict):
     ##
     # Opens the config file, or creates it when it does not exists
     def __init__(self):
-        
         ## the location in the file system for the configuration file
         self.configdir = self._tryToFindConfigDir()
         ## name for the configuration file.
-        self.conffile  = self.configdir + PROGRAM + EXTENSION
+        self.conffile = self.configdir + PROGRAM + EXTENSION
         if not os.path.exists(self.conffile):
             self.create()
-        try :
+        try:
             self.parse()
         except json.decoder.JSONDecodeError as e:
             msg = "Unable to parse configfile {} because: {}".format(
@@ -119,7 +120,7 @@ class ConfigFile (dict):
         else:
             path += "/" + PROGRAM + "/"
         return path
-    
+
     ##
     # returns the unix configuration directory.
     # \return a path to a unix config dir.
@@ -146,4 +147,3 @@ if __name__ == "__main__":
     conffile = ConfigFile()
     conffile.write()
     print(json.dumps(conffile, indent=2))
-

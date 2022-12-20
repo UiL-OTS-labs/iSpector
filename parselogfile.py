@@ -21,6 +21,8 @@ if __name__ == "__main__":
     cmdargs = cmdparser.parse_args()
     files = cmdargs.filenames
 
+    msg = "Turning the entries of {} into an experiment took {} seconds"
+
     for fname in files:
         tzero = time.time()
         try:
@@ -32,15 +34,17 @@ if __name__ == "__main__":
         entries = parseresult.getEntries()
         if entries:
             msg = "Parsed {} in {} seconds"
-            print (msg.format(fname, tend - tzero))
+            print(msg.format(fname, tend - tzero))
         else:
             msg = "unable to parse {}, because:\n{}"
-            tabbed_errors = ["\t" + str(error) + "\n" for error in pr.getErrors()]
+            pr = parseresult
+            tabbed_errors = [
+                "\t" + str(error) + "\n" for error in pr.getErrors()
+            ]
             print(msg.format(fname, tabbed_errors))
             continue
         if cmdargs.experiment:
             tzero = time.time()
             experiment = log.eyeexperiment.EyeExperiment(entries)
             tend = time.time()
-            msg = "Turning the entries of {} into an experiment took {} seconds"
-            print(msg.format(fname, tend -  tzero))
+            print(msg.format(fname, tend - tzero))

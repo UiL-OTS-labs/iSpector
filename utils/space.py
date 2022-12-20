@@ -8,8 +8,8 @@
 
 import math
 
+
 class Point(object):
-    
     ##
     # init a point in 2D space
     #
@@ -17,13 +17,13 @@ class Point(object):
     # \param y      an y-coordinate (also specify x)
     # \param tup    a tuple with an x and y coordinate
     def __init__(self, x=None, y=None, tup=None):
-        if x != None and y != None:
+        if x is not None and y is not None:
             self.x, self.y = x, y
         elif tup:
             self.x, self.y = tuple(tup)
         else:
             raise ValueError("To init a Point specify x and y or tup")
-    
+
     ##
     # return the distance between two points
     def distance(p1, p2):
@@ -37,4 +37,6 @@ if __name__ == "__main__":
     p1 = Point(x=0.0, y=0.0)
     t = (4.0, 5.0)
     p2 = Point(tup=t)
-    print("The distance between ", p1, "and ", p2, " = ", Point.distance(p1, p2))
+    print(
+        "The distance between ", p1, "and ", p2, " = ", Point.distance(p1, p2)
+    )
