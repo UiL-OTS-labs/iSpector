@@ -16,6 +16,8 @@ Events will be primarily sorted on time stamp and then on the type.
 # This file contains utilities for log files.
 #
 
+from __future__ import annotations
+
 import itertools
 import functools
 import abc
