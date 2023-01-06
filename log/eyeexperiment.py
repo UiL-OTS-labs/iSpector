@@ -101,14 +101,15 @@ class EyeTrial(object):
 
     def __ne__(self, rhs):
         '''
-        instance inequality
+        Tests instance inequality
         @return True if two instances of EyeTrial are not equal, false otherwise.
         '''
         return not (self == rhs)
 
-    def addEntry(self, entry):
+    def addEntry(self, entry: LogEntry):
         '''Add a LogEntry to this trial
-        # @param entry A logentry of type LGAZE, RGAZE, LFIX or RFIX
+
+        @param entry A LogEntry of type LGAZE, RGAZE, LFIX or RFIX
         '''
         n = entry.getEntryType()
         if n == LogEntry.LGAZE:
@@ -167,8 +168,8 @@ class EyeTrial(object):
 
     def matchFixationsToSamples(self):
         ''' When you have monocular data it might be hard to guess
-            whether the data is from the left or the right eye.
-            this function maps right gaze to left fixations or vice versa.
+        whether the data is from the left or the right eye.
+        this function maps right gaze to left fixations or vice versa.
         '''
         if len(self.logrfix) and len(self.lgaze) and len(self.rgaze) == 0:
             self.rgaze = self.lgaze
@@ -179,8 +180,8 @@ class EyeTrial(object):
 
     def fixFirstFix(self):
         '''Sometimes the fixations are already started before the start
-           of the trial. This method sets the first fixation identical
-           to the first sample and adepts the duration.
+        of the trial. This method sets the first fixation identical
+        to the first sample and adepts the duration.
         '''
         refgaze = []
         if not self.lgaze and not self.rgaze:
@@ -251,7 +252,11 @@ class EyeTrial(object):
 
 
 class EyeExperiment(object):
-    '''EyeExperiment contains all the EyeTrial of one experiment'''
+    '''EyeExperiment contains all the EyeTrials of one experiment.
+
+    An EyeExperiment is a collection of EyeTrials and a bit of meta data
+    of an experiment with eyetracking.
+    '''
 
     def _isTrialBegin(self, entry):
         '''Determines if a LogEntry marks a trial begin
@@ -311,10 +316,8 @@ class EyeExperiment(object):
         return False
 
     def __init__(self, entries):
-        '''Intializes an EyeExperiment by parsing a list of entries.
+        '''Initializes an EyeExperiment by parsing a list of entries.
 
-        An EyeExperiment is a collection of EyeTrials and a bit of meta data
-        of an eyemovement experiment.
 
         @param entries a list of logentries from a logfile the entries
         should already be sorted on time.

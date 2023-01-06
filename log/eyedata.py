@@ -1,70 +1,81 @@
 #!/usr/bin/env python
 
-##
-# \file eyedata.py
-#
-# EyeData contains the EyeData class which helps in detecting
-# fixations and saccades.
-#
-# \package log
+"""
+@file eyedata.py
+
+EyeData contains the EyeData class which helps in detecting
+fixations and saccades.
+
+@package log
+"""
 
 import numpy as np
 from numpy import nanmean
 from numpy import nanmedian
+import typing
 
 import scipy as sp
 try:
     from scipy.signal import savitzky_golay
 except ImportError:
     from utils.tempsignal import savitzky_golay
-from .eyelog import LogEntry, SaccadeEntry, FixationEntry
+from .eyelog import LogEntry, SaccadeEntry, FixationEntry, GazeEntry
 
 
-##
-# Generator to extract X coordinates
-# @param gazeentrylist an iterable with gazeentries with only one type of
-# logentries
-# eg LGAZE or RGAZE
-def generateXCoors(gazeentrylist):
+# type hints
+gazelist = typing.List[GazeEntry]
+float_gen = typing.Generator[float, None, None]
+
+
+def generateXCoors(gazeentrylist: gazelist) -> float_gen:
+    """Generator to extract X coordinates.
+
+    @param gazeentrylist an iterable with gazeentries with only one type of
+    logentries
+    eg LGAZE or RGAZE
+    """
     for i in gazeentrylist:
         yield i.x
 
 
-##
-# Generator to extract Y coordinates
-# @param gazeentrylist an iterable with gazeentries with only one type of
-# logentries
-# eg LGAZE or RGAZE
-def generateYCoors(gazeentrylist):
+def generateYCoors(gazeentrylist: gazelist) -> float_gen:
+    """Generator to extract Y coordinates.
+
+    @param gazeentrylist an iterable with gazeentries with only one type of
+    logentries
+    eg LGAZE or RGAZE
+    """
     for i in gazeentrylist:
         yield i.y
 
 
-##
-# Generator to extract pupilsize
-# @param gazeentrylist an iterable with gazeentries with only one type of
-# logentry
-# eg LGAZE or RGAZE
-def generatePupilSize(gazeentrylist):
+def generatePupilSize(gazeentrylist: gazelist) -> float_gen:
+    """Generator to extract pupilsize
+
+    @param gazeentrylist an iterable with gazeentries with only one type of
+    logentry
+    eg LGAZE or RGAZE
+    """
     for i in gazeentrylist:
         yield i.pupil
 
 
-##
-# Generator to extract the times of the gazeetries
-# @param gazeentrylist an iterable with gazeentries with only one type of
-# logentries
-# eg LGAZE or RGAZE
-def generateEyeTimes(gazeentrylist):
+def generateEyeTimes(gazeentrylist: gazelist) -> float_gen:
+    """Generator to extract the times of the gazeetries
+
+    @param gazeentrylist an iterable with gazeentries with only one type of
+    logentries
+    eg LGAZE or RGAZE
+    """
     for i in gazeentrylist:
         yield i.getEyeTime()
 
 
-##
-# Get a Numpy array with an eyesignal.
-# @param gazeentrylist a list with gazeentries
-#
-def getValueArray(gazentrylist, generator):
+def getValueArray(gazentrylist: gazelist, generator) -> np.array:
+    """Get a Numpy array with an eyesignal.
+
+    @param gazeentrylist a list with gazeentries
+    """
     output = np.zeros(len(gazentrylist))
     for i, el in enumerate(generator(gazentrylist)):
         output[i] = el
@@ -72,42 +83,42 @@ def getValueArray(gazentrylist, generator):
 
 
 class EyeData:
-    '''
-    @brief Finds fixations and saccades in eyemovement signals
+    """
+    Finds fixations and saccades in eyemovement signals
 
     This class uses an eyetrial to obtain the eyetracking data of
     one trial and is able to plot that data and generate the results.
-    '''
+    """
 
     ## Marks a start fixation
     _sf = -1
 
     ## Marks an end fixation
     _ef = 1
-    '''end fixation'''
+    """end fixation"""
 
-    ##
-    # Create a eyedata object that contains the signals for the left and right
-    # eye when available in the eyetrial instance.
-    #
-    # @param method which method do use to find an indication of the noise.
-    #       "mean" by taking the average of the signal "median" the median.
-    # @param n set the threshold on n times the result of the outcome of method
-    # @param smooth whether or not smoothed signals should be used to determine
-    #        the values of fixations
-    # @param smoothwinsize the windowsize for the savitsky golay filter.
-    # @param smoothorder the order of the polynomial to fit the signal within
-    #        the window
     def __init__(self, method, n, smooth, smoothwinsize, smoothorder):
+        """Create a eyedata object that contains the signals for the left and
+        right eye when available in the eyetrial instance.
+
+        @param method which method do use to find an indication of the noise.
+              "mean" by taking the average of the signal "median" the median.
+        @param n set the threshold on n times the result of the outcome of method
+        @param smooth whether or not smoothed signals should be used to determine
+               the values of fixations
+        @param smoothwinsize the windowsize for the savitsky golay filter.
+        @param smoothorder the order of the polynomial to fit the signal within
+               the window
+        """
         ## boolean whether or not to smooth the data
         self.smooth = smooth
         ## size of the smoothing window for the savitsky golay filter
         self.smoothwin = smoothwinsize
         ## The polynomial order to which the signal is fitted while smoothing
         self.smoothorder = smoothorder
-        ##
-        # The method is either mean or median and used to determine the
-        # velocity threshold.
+
+        ## The method is either mean or median and used to determine the
+        #  velocity threshold.
         self.method = method
         ## how many times the mean or median is taken to determine the final
         #  threshold value
@@ -157,23 +168,25 @@ class EyeData:
         ## list of saccades of the right eye
         self.rsaclist = []
 
-    ##
-    # ProcessTrial determines fixations and saccades in one trial
-    #
-    # ProcessTrial determines how fast an eye is moving. If the eye is moving
-    # a a speed below the threshold we conclude the eye fixating. In contrast
-    # if the speed is above the threshold we say the eye is saccading.
-    # In theory the eye could be in smoothpursuit mode, and EyeData would
-    # consider it a fixation or saccade falsely.
-    #
-    # @param eyetrial and EyeTrial instance
-    # @param overwritefix
-    # @TODO implement parameter overwritefix there should be more trials
-    # parameters
-    # available. Perhaps it is better to contain trial/experiment meta data
-    # here.
-    # this class should be dedicated to eyemovement only.
+        ## the stimulus file
+        self.stimfile = ""
+
     def processTrial(self, eyetrial, overwritefix=False):
+        """ProcessTrial determines fixations and saccades in one trial
+
+        ProcessTrial determines how fast an eye is moving. If the eye is moving
+        in a speed below the threshold we conclude the eye fixating. In
+        contrast, if the speed exceeds the threshold we conclude the eye is
+        makeing a saccade. In theory the eye could be in smooth pursuit mode,
+        and EyeData would consider it a fixation or saccade falsely.
+
+        @param eyetrial and EyeTrial instance
+        @param overwritefix
+        @TODO implement parameter overwritefix there should be more trials
+        parameters available. Perhaps it is better to contain trial/experiment
+        meta data here.
+        This class should be dedicated to eyemovement only.
+        """
         ## The stimulus for this file
         self.stimfile = eyetrial.stimulus
         self.xgazeleft = getValueArray(eyetrial.lgaze, generateXCoors)
@@ -344,6 +357,7 @@ class EyeData:
 
         self._findFixations()
         self._findSaccades()
+        self._findBlinks()
 
         self._correctFixationsByDuration()
 
@@ -484,11 +498,11 @@ class EyeData:
         return fixations, saccades
 
     def _correctFixationsByDuration(self, ms=50.0):
-        ''' This function corrects fixations,
+        """ This function corrects fixations,
         if fixations are shorter than ms.
         It also creates saccades on basis
         of those fixations
-        '''
+        """
         if self.hasLeftGaze():
             self.lfixlist, self.lsaclist = self._fixFixSac(
                 self.fixl,
@@ -511,9 +525,9 @@ class EyeData:
             )
 
     def _findFixations(self):
-        '''
+        """
         Uses the velocities to determine the fixations
-        '''
+        """
         lthreshold = None
         rthreshold = None
         if self.smooth:
@@ -538,9 +552,9 @@ class EyeData:
             self.fixr = self.fixr - fixr2
 
     def _findSaccades(self):
-        '''
+        """
         Uses the velocities to determine the saccades
-        '''
+        """
         lthreshold = None
         rthreshold = None
         if self.smooth:
@@ -558,23 +572,33 @@ class EyeData:
         sacr2 = np.concatenate([rthreshold > self.threshold[1], [0]])
         self.sacr = self.sacr - sacr2
 
+    def _findBlinks(self):
+        """_findBlinks finds blinks contained in the eye signal.
+
+        This algorithm considers a blink when the pupil size is .0 or NAN
+        """
+
+        blinkleft = self.pu
+
+
+
 # TODO rewrite this functions as one and adapt the time of the first fixation
 # to match the first gaze data
     def _etAttachRFix(self, et):
-        '''
+        """
         attaches the right fixations to et.
         Note this clears the existing fixations.
-        '''
+        """
         et.rfix = self._getFixList(
             self.rgazetimes, self.fixr, self.xgazeright,
             self.ygazeright, LogEntry.RFIX
         )
 
     def _etAttachLFix(self, et):
-        '''
+        """
         attaches the left fixations to et.
         Note this clears the existing fixations.
-        '''
+        """
         et.lfix = self._getFixList(
             self.lgazetimes, self.fixl, self.xgazeleft,
             self.ygazeleft, LogEntry.LFIX
@@ -610,113 +634,100 @@ class EyeData:
             )
         return fixations
 
-    ##
-    # Get the eye movement raw signal of the left eye
-    #
-    # @param smoothed returns the smoothed signals
-    #
-    # \return a tuple of the x and y signal as numpy arrays of the left eye.
     def getLeft(self, smoothed=False):
+        """Get the eye movement raw signal of the left eye
+
+        @param smoothed returns the smoothed signals
+
+        @return a tuple of the x and y signal as numpy arrays of the left eye.
+        """
         if smoothed:
             return self.xgazelefts, self.ygazelefts
         else:
             return self.xgazeleft, self.ygazeleft
 
-    ##
-    # Returns the velocity of the left eye
     def getLeftVelocity(self, smoothed=False):
+        """Returns the velocity of the left eye"""
         if smoothed:
             return self.velols
         else:
             return self.velol
 
-    ##
-    # Get the eye movement raw signal of the right eye
-    #
-    # @param smoothed returns the smoothed signals
-    #
-    # \return a tuple of the x and y signal as numpy arrays of the right eye.
     def getRight(self, smoothed=False):
-        '''
-        Returns the signals of x and y as numpy arrays.
-        @param smoothed return the smoothed signals
+        """Get the eye movement raw signal of the right eye.
 
-        @returns tuple of x and y signal respectively
-        '''
+        @param smoothed returns the smoothed signals
+
+        @return a tuple of the x and y signal as numpy arrays of the right eye.
+        """
         if smoothed:
             return self.xgazerights, self.ygazerights
         else:
             return self.xgazeright, self.ygazeright
 
-    ##
-    # Returns the velocity of the right eye
     def getRightVelocity(self, smoothed=False):
+        """Returns the velocity of the right eye."""
         if smoothed:
             return self.velors
         else:
             return self.velor
 
-    ## Check whether the EyeData contains sample of the left eye
     def hasLeftGaze(self):
+        """Check whether the EyeData contains sample of the left eye."""
         return len(self.xgazeleft) > 0
 
-    ## Check whether the EyeData contains sample of the right eye
     def hasRightGaze(self):
+        """Check whether the EyeData contains sample of the right eye."""
         return len(self.xgazeright) > 0
 
-    ## return a tuple of times belonging to the right and left eye respectively
     def getTimes(self):
+        """return a tuple of times belonging to the right and left eye
+        respectively."""
         return self.lgazetimes, self.rgazetimes
 
-    ##
-    # returns a tuple of vectors the first items contains a vector of
-    # leftfixations the second returns a vector with the right fixations. a -1
-    # means a fixation starts and a 1 means a fixation ends.
     def getFixVecs(self):
+        """returns a tuple of vectors the first items contains a vector of
+        leftfixations the second returns a vector with the right fixations.
+        A -1 means a fixation starts and a 1 means a fixation ends.
+        """
         return self.fixl, self.fixr
 
-    ##
-    # returns a tuple of vectors, the first item contains a vector of  of the
-    # left saccade and the second returns the right saccades. a -1 means a
-    # saccade start and a 1 means fixation start.
     def getSacVecs(self):
+        """Returns a tuple of vectors, the first item contains a vector of  of
+        the left saccade and the second returns the right saccades. A -1 means
+        a saccade start and a 1 means fixation start.
+        """
         return self.sacl, self.sacr
 
-    ##
-    # Returns the found fixations
     def getFixations(self):
+        """Returns the found fixations"""
         return self.lfixlist, self.rfixlist
 
-    ##
-    # Return saccades in list
     def getSaccades(self):
+        """Return saccades in list"""
         return self.lsaclist, self.rsaclist
 
-    ##
-    # returns the velocity vectors of the left and right eye
     def getVelo(self, smooth=False):
+        """returns the velocity vectors of the left and right eye"""
         if (smooth):
             return self.velols, self.velors
         else:
             return self.velol, self.velor
 
-    ##
-    # returns a tuple with the median velocity of the left and right eye
-    # respectively
     def getMedVelo(self):
+        """returns a tuple with the median velocity of the left and right eye
+        respectively.
+        """
         return self.medvelol, self.medvelor
 
-    ##
-    # returns a tuple with the mean velocity of the left and right eye
     def getMeanVelo(self):
+        """returns a tuple with the mean velocity of the left and right eye"""
         return self.meanvelol, self.meanvelor
 
-    ##
-    # returns a value of the threshold
     def getThreshold(self):
+        """returns a value of the threshold"""
         return self.threshold
 
-    ##
-    # Return a tuple of the left and right pupil size.
     def getPupilSize(self):
+        """Return a tuple of the left and right pupil size"""
         return self.lpup, self.rpup
