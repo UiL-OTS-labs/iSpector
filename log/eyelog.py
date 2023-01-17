@@ -1,5 +1,5 @@
 #!usr/bin/env python
-"""Contains classes/function for buildin a eyemovement log
+"""Contains classes/function for building an eyemovement log
 
 This is a module that contains all classes needed to create a log file for the
 analysis of behavioral experiments that contain eye movement data.
@@ -21,6 +21,7 @@ from __future__ import annotations
 import itertools
 import functools
 import abc
+import typing
 from collections.abc import Iterable
 
 
@@ -351,7 +352,7 @@ class FixationEntry(LogEntry):
         self.duration = eyedur
 
     def copy(self):
-        """Creat a deepcopy of oneself"""
+        """Create a deepcopy of oneself"""
         return FixationEntry(
             self.entrytype, self.eyetime, self.duration, self.x, self.y
         )
@@ -505,19 +506,21 @@ class SaccadeEntry(LogEntry):
 class SaccadeEndEntry(LogEntry):
     """A marker for saccade end in a Eyelink ascii log."""
 
-    def __init__(self, saccade):
+    def __init__(self, saccade: SaccadeEntry):
         """inits a SaccadeEndEntry"""
+
+        if not isinstance(saccade, SaccadeEntry):
+            raise TypeError("saccade should be an instance of SaccadeEntry")
 
         ## the saccade that belong to this end marker
         self.saccade = saccade
         start = saccade.getEyeTime() + saccade.duration
-        entry = None
-        if saccade.getEntryType() == LogEntry.RSAC:
-            entry = LogEntry.SACCENDR
-        elif saccade.getEntryType() == LogEntry.LSAC:
-            entry = LogEntry.SACCENDL
-        else:
-            raise ValueError("No saccade to init SaccadeEndEntry")
+
+        endsac = {
+            LogEntry.LSAC: LogEntry.SACCENDL,
+            LogEntry.RSAC: LogEntry.SACCENDR
+        }
+        entry = endsac[saccade.getEntryType()]
         super(SaccadeEndEntry, self).__init__(entry, start)
 
     def copy(self):
@@ -553,7 +556,6 @@ class SaccadeEndEntry(LogEntry):
 class BlinkEntry(LogEntry):
     """BlinkEntry marks a blink in a logfile"""
 
-
     ACCEPTABLE_ENTRIES = [
         LogEntry.LBLINK,
         LogEntry.RBLINK
@@ -581,14 +583,14 @@ class BlinkEntry(LogEntry):
         """Create a string from self in Eyelink ascii format"""
         sblink = ""
         SEP = LogEntry.SEP
-        if self.getEntryType() == LogEntry.SACCENDR:
+        if self.getEntryType() == LogEntry.RBLINK:
             sblink += ("SBLINK" + SEP + "R" + SEP)
-        elif self.getEntryType() == LogEntry.SACCENDL:
+        elif self.getEntryType() == LogEntry.LBLINK:
             sblink += ("SBLINK" + SEP + "L" + SEP)
         else:
             raise ValueError("invalid sblink encountered")
 
-        sblink += int(self.getEyeTime())
+        sblink += str(self.getEyeTime())
         return sblink
 
 
@@ -611,9 +613,9 @@ class BlinkEndEntry(LogEntry):
         """Create a string from self in Eyelink ascii format"""
         eblink = ""
         SEP = LogEntry.SEP
-        if self.getEntryType() == LogEntry.SACCENDR:
+        if self.getEntryType() == LogEntry.BLINKENDR:
             eblink += ("EBLINK" + SEP + "R" + SEP)
-        elif self.getEntryType() == LogEntry.SACCENDL:
+        elif self.getEntryType() == LogEntry.BLINKENDL:
             eblink += ("EBLINK" + SEP + "L" + SEP)
         else:
             raise ValueError("invalid sblink encountered")
@@ -622,7 +624,7 @@ class BlinkEndEntry(LogEntry):
             [
                 str(int(self.startentry.getEyeTime())), SEP,
                 str(int(self.getEyeTime())), SEP,
-                str(int(self.duration))
+                str(int(self.startentry.duration))
             ]
         )
         return eblink
@@ -724,9 +726,16 @@ def generateFixations(entries: logentry_iterable):
 
 def generateSaccades(entries: logentry_iterable):
     """Generator function that yields saccades from a logentry_iterable"""
-    sacentries = [LogEntry.LFIX, LogEntry.RFIX]
+    sacentries = [LogEntry.LSAC, LogEntry.RSAC]
     for entry in entries:
         if entry.getEntryType() in sacentries:
+            yield entry
+
+
+def generateBlinks(entries: logentry_iterable):
+    """Generator function that yields blinks from a logentry_iterable"""
+    for entry in entries:
+        if isinstance(entry, BlinkEntry):
             yield entry
 
 
@@ -742,6 +751,12 @@ def generateNewEndSaccades(entries: logentry_iterable):
         yield SaccadeEndEntry(sac)
 
 
+def generateEndBlinks(entries: logentry_iterable):
+    """yields a end entries for entries"""
+    for blink in generateBlinks(entries):
+        yield BlinkEndEntry(blink)
+
+
 def generateLGaze(entries: logentry_iterable):
     """Generator for fixation of the lefteye"""
     for e in entries:
@@ -753,6 +768,15 @@ def generateRGaze(entries: logentry_iterable):
     """Generator for gaze samples of the righteye"""
     for e in entries:
         if LogEntry.isRGaze(e):
+            yield e
+
+
+def generateAscGazeEntries(
+        entries: logentry_iterable) -> typing.Generator[
+            AscGazeEntry, None, None]:
+    """Filters AscGazeEntries from entries"""
+    for e in entries:
+        if isinstance(e, AscGazeEntry):
             yield e
 
 
@@ -773,8 +797,12 @@ class SortFixationLog:
     ssacl = sfixr + 1
     ## Entry with start saccade right eye.
     ssacr = ssacl + 1
+    ## Entry with start blink left eye
+    sblinkl = ssacr + 1
+    ## Entry with start blink right eye
+    sblinkr = sblinkl + 1
     ## Entry with gaze.
-    gaze = ssacr + 1
+    gaze = sblinkr + 1
     ## Entry with end fixation with right eye.
     efixr = gaze + 1
     ## Entry with end fixation with left eye.
@@ -783,9 +811,12 @@ class SortFixationLog:
     esacr = efixl + 1
     ## Entry with end saccade with left eye.
     esacl = esacr + 1
+    ## Entry with end blink with right eye.
+    eblinkr = esacl + 1
+    ## Entry with end blink with left eye.
+    eblinkl = eblinkr + 1
     ## Entry with start marker.
-    start = esacl + 1
-    ## Entry with .
+    start = eblinkl + 1
 
     ##
     # this dictionary maps LogEntry.getEntryType() to above messages
@@ -796,11 +827,15 @@ class SortFixationLog:
         LogEntry.MESSAGE: msg,
         LogEntry.LSAC: ssacl,
         LogEntry.RSAC: ssacr,
+        LogEntry.LBLINK: sblinkl,
+        LogEntry.RBLINK: sblinkr,
         LogEntry.ASCGAZE: gaze,
         LogEntry.FIXENDR: efixr,
         LogEntry.FIXENDL: efixl,
         LogEntry.SACCENDR: esacr,
         LogEntry.SACCENDL: esacl,
+        LogEntry.BLINKENDR: eblinkr,
+        LogEntry.BLINKENDL: eblinkl,
         LogEntry.BEGIN: start,
         LogEntry.END: end
     }
@@ -814,13 +849,8 @@ class SortFixationLog:
         """
         diff = LogEntry.sortCallback(lefthandside, righthandside)
         if diff == 0:
-            try:
-                return self.mapdict[lefthandside.getEntryType()] -\
-                    self.mapdict[righthandside.getEntryType()]
-            except KeyError:
-                # TODO turn this in a runtime error
-                print("left = ", lefthandside.getEntryType(), end=' ')
-                print("\tright= ", righthandside.getEntryType())
+            return self.mapdict[lefthandside.getEntryType()] -\
+                self.mapdict[righthandside.getEntryType()]
         return diff
 
 
@@ -863,7 +893,7 @@ def _appendBeginEndEntries(entries, eye):
         entries.append(EndEntry(i.getEyeTime()))
 
 
-def saveForFixation(entries, filename):
+def saveForFixation(entries: typing.List[LogEntry], filename: str):
     """This function examines the gaze data. Creates it's own fixations and
     saccades and tries to log all those events with the normal event to a file
     with file name.
@@ -881,16 +911,20 @@ def saveForFixation(entries, filename):
     endsaccades = []
     for sac in generateSaccades(entries):
         endsaccades.append(SaccadeEndEntry(sac))
+    endblinks: typing.List[BlinkEndEntry] = []
+    endblinks += list(generateEndBlinks(entries))
 
     entries.extend(endfixations)
     entries.extend(endsaccades)
+    entries.extend(endblinks)
 
     # generate AscGazeEntries
     for i, j in itertools.zip_longest(generateLGaze(entries), generateRGaze(entries)):
         entries.append(AscGazeEntry(i, j))
 
     eyetype = StartEntry.LEFT
-    for e in reversed(entries):
+    for e in generateAscGazeEntries(entries):
+        # this makes sure the type is right.
         if e.getEntryType() == LogEntry.ASCGAZE:
             if e.lgaze and e.rgaze:
                 eyetype = StartEntry.BINO
