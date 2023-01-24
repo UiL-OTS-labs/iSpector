@@ -872,7 +872,7 @@ class ISpectorGui(QtWidgets.QMainWindow):
             if not absoutput:
                 continue
 
-            # Determine our own fixations and saccades.
+            # Determine our own fixations, saccades and blinks.
             for t in experiment.trials:
                 if t.containsGazeData():
                     thres = self.MODEL[self.MODEL.THRESHOLD]
@@ -889,11 +889,14 @@ class ISpectorGui(QtWidgets.QMainWindow):
                     )
                     eyedata.processTrial(t, True)
                     lfixes, rfixes = eyedata.getFixations()
-                    rsacs, lsacs = eyedata.getSaccades()
+                    lsacs, rsacs = eyedata.getSaccades()
+                    lblinks, rblinks = eyedata.getBlinks()
                     entries.extend(lfixes)
                     entries.extend(rfixes)
                     entries.extend(lsacs)
                     entries.extend(rsacs)
+                    entries.extend(lblinks)
+                    entries.extend(rblinks)
 
             # finally save the output.
             saveForFixation(entries, absoutput)

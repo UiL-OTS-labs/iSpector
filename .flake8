@@ -1,3 +1,6 @@
 [flake8]
-ignore = 
+ignore =
+    # we use ## for doxygen comments
     E266
+
+max-line-length=100
