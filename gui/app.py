@@ -7,6 +7,7 @@ from PyQt5 import QtCore
 This is the Qt application that runs the iSpector mainloop.
 '''
 
+
 class ISpectorApp(QtWidgets.QApplication):
     ''' Our own app mainly create to catch user events '''
 
@@ -19,4 +20,3 @@ class ISpectorApp(QtWidgets.QApplication):
                     return res
                 w = w.parent()
         return super(ISpectorApp, self).notify(receiver, event)
-

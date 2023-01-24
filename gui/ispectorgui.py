@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 
-#from log import *
-from log.eyedata import *
-from log.eyeexperiment import *
-from log.parseeyefile import *
 from PyQt5 import QtGui, QtWidgets
 from PyQt5 import QtCore
 
+from log.eyedata import LogEntry, EyeData
+from log.eyeexperiment import EyeExperiment
+from log.parseeyefile import parseEyeFile
+from log.eyelog import saveForFixation
 from . import inspecteyedataview
 from gui import datamodel
 from . import statusmessage as sm
 import sys
-import os
 import os.path as p
 from . import ievent
 from . import statusbox
@@ -22,15 +21,17 @@ from . import fixationeditor
 
 LOGO = "iSpectorLogo.svg"
 
-SMOOTH_WINDOW_CHOICES = [str(i) for i in range(3,21, 2)]
+SMOOTH_WINDOW_CHOICES = [str(i) for i in range(3, 21, 2)]
+
 
 class NoSuchString(Exception):
-    def __init__(self,message):
+    def __init__(self, message):
         super(NoSuchString, self).__init__(message)
+
 
 def comboSelectString(combo, string):
     """
-    Selects the string if available does noting when the string is allready
+    Selects the string if available does noting when the string is already
     selected
     """
     if combo.currentText() == string:
@@ -41,35 +42,36 @@ def comboSelectString(combo, string):
     else:
         combo.setCurrentIndex(index)
 
-class Controller :
+
+class Controller:
     """
     The controller keeps track if the user enters valid input inside the gui.
-    if the input is valdid the controller updates the model.
+    If the input is valid the controller updates the model.
     """
-    
+
     def __init__(self, model, view):
         """
-        @param Model the model that contains all parameters for succesfull parsing
-        the input files and the input files themselves.
+        @param Model the model that contains all parameters for successful
+        parsing the input files and the input files themselves.
         """
         assert (model and view)
-        self.model  = model
-        self.view   = view
+        self.model = model
+        self.view = view
         self._initModel()
 
     def _initModel(self):
         """ Fixes model initially """
         self.model[self.model.STATUS] = "ready"
-        
+
         # Only select real files and create a absolute path
         self.model.set_files(
-            [p.abspath(i) for i in self.model.files() if p.isfile(i) ]
+            [p.abspath(i) for i in self.model.files() if p.isfile(i)]
         )
         self.model.set_files(sorted(set(self.model.files())))
-        
+
         # create selected file in the model namespace
         if self.model.files():
-            #set the first file as selected
+            # set the first file as selected
             self.model.selected.append(self.model.files()[0])
 
         if self.model.output_dir():
@@ -87,15 +89,15 @@ class Controller :
 
     def updateEye(self, string):
         if string == "left":
-            self.model[self.model.EXTRACT_LEFT]=True
-            self.model[self.model.EXTRACT_RIGHT]=False
+            self.model[self.model.EXTRACT_LEFT] = True
+            self.model[self.model.EXTRACT_RIGHT] = False
         elif string == "right":
-            self.model[self.model.EXTRACT_LEFT]=False
-            self.model[self.model.EXTRACT_RIGHT]=True
+            self.model[self.model.EXTRACT_LEFT] = False
+            self.model[self.model.EXTRACT_RIGHT] = True
         elif string == "both":
-            #if both are false default is to select both
-            self.model[self.model.EXTRACT_LEFT]=False
-            self.model[self.model.EXTRACT_RIGHT]=False
+            # if both are false default is to select both
+            self.model[self.model.EXTRACT_LEFT] = False
+            self.model[self.model.EXTRACT_RIGHT] = False
         else:
             raise RuntimeError("Invalid string in updateEye")
 
@@ -106,11 +108,13 @@ class Controller :
                 return
         elif state == QtCore.Qt.Unchecked:
             if not self.model[self.model.SMOOTH]:
-                #everything is ok
+                # everything is ok
                 return
         else:
-            raise ValueError("state must be either QtCore.Qt.Checked or Unchecked")
-        
+            raise ValueError(
+                "state must be either QtCore.Qt.Checked or Unchecked"
+            )
+
         self.model[self.model.SMOOTH] = not self.model[self.model.SMOOTH]
 
     def updateSmoothWindowSize(self, string):
@@ -122,7 +126,9 @@ class Controller :
     def updateSmoothOrder(self, string):
         value = int(string)
         if value < 1:
-            raise ValueError("Smoothorder isn't Smootorder > 0")
+            raise ValueError(
+                "Smoothorder isn't Smootorder > 0"
+            )
         self.model[self.model.SMOOTHORDER] = value
 
     def updateThreshold(self, string):
@@ -131,10 +137,11 @@ class Controller :
         elif string == "median":
             self.model[self.model.THRESHOLD] = "median"
         else:
-            raise ValueError(("The method for determining the threshold must be"
-                              "either mean or median")
-                              )
-    
+            raise ValueError(
+                ("The method for determining the threshold must be"
+                 "either mean or median")
+            )
+
     def updateNThreshold(self, real):
         """
         set the number of times the mean or median must be taken to get
@@ -150,7 +157,7 @@ class Controller :
         """ set filenamelist as the new selected files. """
         filenamelist = [str(i) for i in filenamelist]
         for i in filenamelist:
-            #remove possible dupplicates
+            # remove possible dupplicates
             if not (i in self.model.files()):
                 self.model.files().append(i)
         self.model.files().sort()
@@ -160,7 +167,7 @@ class Controller :
         Store the default open directory
         """
         if p.isdir(d):
-            dirs = self.model.set_file_dir(d)
+            self.model.set_file_dir(d)
 
     def updateDirectory(self, dirname):
         """ updates the output directory to be dirname """
@@ -169,7 +176,7 @@ class Controller :
             self.model.set_output_dir(p.abspath(dirname))
         else:
             self.model.set_output_dir(p.abspath("."))
-    
+
     def updateStimDir(self, dirname):
         """ updates the stimulus directory to be dirname """
         dirname = str(dirname)
@@ -187,9 +194,9 @@ class Controller :
     def removeSelected(self, flist):
         """ Remove items selected for an action"""
         flist = [str(i) for i in flist]
-        removeset   = set(flist)
-        oldset      = set(self.model.files())
-        newset      = oldset - removeset
+        removeset = set(flist)
+        oldset = set(self.model.files())
+        newset = oldset - removeset
         self.model.selected = []
         self.model.set_files(list(sorted(newset)))
 
@@ -202,35 +209,47 @@ class DirGroup (QtWidgets.QGroupBox):
     def __init__(self, controller, model, mainwindow):
         super(DirGroup, self).__init__("Directories")
         self.controller = controller
-        self.MODEL      = model
-        self.grid       = QtWidgets.QGridLayout()
+        self.MODEL = model
+        self.grid = QtWidgets.QGridLayout()
         self.mainwindow = mainwindow
         self._init()
 
     def _init(self):
         verticalbox = QtWidgets.QVBoxLayout()
         self.setLayout(verticalbox)
-        
-        # Adding widgets to select the output directory
-        self.outdirlabel    = QtWidgets.QLabel("Output directory:")
-        self.outdiropenicon = QtGui.QIcon.fromTheme("folder")
-        self.outdirbutton   = QtWidgets.QPushButton(self.outdiropenicon, "open")
-        self.outdirbox      = QtWidgets.QHBoxLayout()
-        
-        # Setting tooltips and adding the directory widgets to the directory HBox
-        self.outdirbutton.setToolTip("Select directory to write the output to.")
-        self.outdirbox.addWidget(self.outdirlabel, 1, alignment=QtCore.Qt.AlignLeft)
-        self.outdirbox.addWidget(self.outdirbutton)
-        
-        # Adding widgets to select the output directory
-        self.stimdirlabel   = QtWidgets.QLabel("Stimulus directory:")
-        self.stimdiropenicon= QtGui.QIcon.fromTheme("folder")
-        self.stimdirbutton  = QtWidgets.QPushButton(self.stimdiropenicon, "open")
-        self.stimdirbox     = QtWidgets.QHBoxLayout()
 
-        # Setting tooltips and adding the directory widgets to the directory HBox
-        self.stimdirbutton.setToolTip("Select directory to search for stimuli.")
-        self.stimdirbox.addWidget(self.stimdirlabel, 1, alignment=QtCore.Qt.AlignLeft)
+        # Adding widgets to select the output directory
+        self.outdirlabel = QtWidgets.QLabel("Output directory:")
+        self.outdiropenicon = QtGui.QIcon.fromTheme("folder")
+        self.outdirbutton = QtWidgets.QPushButton(self.outdiropenicon, "open")
+        self.outdirbox = QtWidgets.QHBoxLayout()
+
+        # Setting tooltips and adding the directory widgets to the directory
+        # HBox
+        self.outdirbutton.setToolTip(
+            "Select directory to write the output to."
+        )
+        self.outdirbox.addWidget(
+            self.outdirlabel, 1, alignment=QtCore.Qt.AlignLeft
+        )
+        self.outdirbox.addWidget(self.outdirbutton)
+
+        # Adding widgets to select the output directory
+        self.stimdirlabel = QtWidgets.QLabel("Stimulus directory:")
+        self.stimdiropenicon = QtGui.QIcon.fromTheme("folder")
+        self.stimdirbutton = QtWidgets.QPushButton(
+            self.stimdiropenicon, "open"
+        )
+        self.stimdirbox = QtWidgets.QHBoxLayout()
+
+        # Setting tooltips and adding the directory widgets to the directory
+        # HBox
+        self.stimdirbutton.setToolTip(
+            "Select directory to search for stimuli."
+        )
+        self.stimdirbox.addWidget(
+            self.stimdirlabel, 1, alignment=QtCore.Qt.AlignLeft
+        )
         self.stimdirbox.addWidget(self.stimdirbutton)
 
         # Connect signals
@@ -240,11 +259,11 @@ class DirGroup (QtWidgets.QGroupBox):
         verticalbox.addLayout(self.outdirbox)
         verticalbox.addLayout(self.stimdirbox)
         self.setLayout(verticalbox)
-    
+
     def _setOutDirlabel(self, dirname):
         name = "Output directory:\n \"{0:s}\"".format(dirname)
         self.outdirlabel.setText(name)
-    
+
     def _setStimDirlabel(self, dirname):
         name = "Stimulus directory:\n \"{0:s}\"".format(dirname)
         self.stimdirlabel.setText(name)
@@ -253,25 +272,25 @@ class DirGroup (QtWidgets.QGroupBox):
         """ examines the model. """
         self._setOutDirlabel(self.MODEL.output_dir())
         self._setStimDirlabel(self.MODEL.stimulus_dir())
-    
+
     def _openOutDir(self):
         """ Shows the file dialog to choose a new dir. """
-        d   = self.MODEL.output_dir()
+        d = self.MODEL.output_dir()
         folder = QtWidgets.QFileDialog.getExistingDirectory(
-                                               caption          = "Select output directory",
-                                               directory        = d
-                                               )
+            caption="Select output directory",
+            directory=d
+        )
         if folder:
             self.controller.updateDirectory(folder)
         self.updateFromModel()
-    
+
     def _openStimDir(self):
         """ Shows the file dialog to choose a new dir. """
-        d   = self.MODEL.stimulus_dir()
+        d = self.MODEL.stimulus_dir()
         folder = QtWidgets.QFileDialog.getExistingDirectory(
-                                               caption          = "Select stimulus directory",
-                                               directory        = d
-                                               )
+            caption="Select stimulus directory",
+            directory=d
+        )
         if folder:
             self.controller.updateStimDir(folder)
         self.updateFromModel()
@@ -284,30 +303,39 @@ class OptionGroup(QtWidgets.QGroupBox):
     also sets the main action of iSpector to either
     inspect the data or to extract it forFixation.
     """
-    
-    actiontip       =("Select <b>inspect</b> to look at the file, and\n"
-                      "<b>extract</b> to create output for fixation.")
-    smoothtip       =("Check to smooth the data with a Savitsky-Golay filter\n"
-                      "Note: use the same smoothing values over an entire experiment\n"
-                      "because smoothing values has an influence on the duration\n"
-                      "of saccades and fixations.")
-    eyetip          = "Select the eye to inspect/extract."
-    smoothwintip    =("Select a value for the window size of the smoothing filter\n"
-                      "a bigger value means stronger smoothing.\n"
-                      )
-    smoothordertip  =("Select the polynomial order for the smoothing function\n"
-                      "using order=1 means you are using a moving average.")
-    thresholdtip    =("Use mean or median to set the threshold for determining the\n"
-                      "difference between fixations and saccades.")
-    nthresholdtip   =("Enter a real number. This number is used to multiply with the\n"
-                      "threshold to find the final value over the data. So the\n"
-                      "final threshold = nthreshold * <mean|median>.")
-    
+
+    actiontip = ("Select <b>inspect</b> to look at the file, and\n"
+                 "<b>extract</b> to create output for fixation.")
+    smoothtip = (
+        "Check to smooth the data with a Savitsky-Golay filter\n"
+        "Note: use the same smoothing values over an entire experiment\n"
+        "because smoothing values has an influence on the duration\n"
+        "of saccades and fixations."
+    )
+    eyetip = "Select the eye to inspect/extract."
+    smoothwintip = (
+        "Select a value for the window size of the smoothing filter\n"
+        "a bigger value means stronger smoothing.\n"
+    )
+    smoothordertip = (
+        "Select the polynomial order for the smoothing function\n"
+        "using order=1 means you are using a moving average."
+    )
+    thresholdtip = (
+        "Use mean or median to set the threshold for determining the\n"
+        "difference between fixations and saccades."
+    )
+    nthresholdtip = (
+        "Enter a real number. This number is used to multiply with the\n"
+        "threshold to find the final value over the data. So the\n"
+        "final threshold = nthreshold * <mean|median>."
+    )
+
     def __init__(self, controller, model, mainwindow):
         super(OptionGroup, self).__init__("Options")
         self.controller = controller
-        self.MODEL      = model
-        self.grid       = QtWidgets.QGridLayout()
+        self.MODEL = model
+        self.grid = QtWidgets.QGridLayout()
         self.mainwindow = mainwindow
         self._init()
 
@@ -349,14 +377,14 @@ class OptionGroup(QtWidgets.QGroupBox):
         """
         self.setFlat(False)
         self.setLayout(self.grid)
-        self._addLabel("Action:",      0, 0)
+        self._addLabel("Action:", 0, 0)
         self._addLabel("Inspect/Extract eye:", 1, 0)
-        self._addLabel("Smooth:",      2, 0)
-        self._addLabel("Smoothwindow:",3, 0)
+        self._addLabel("Smooth:", 2, 0)
+        self._addLabel("Smoothwindow:", 3, 0)
         self._addLabel("Smoothorder:", 4, 0)
-        self._addLabel("Threshold:",   5, 0)
-        self._addLabel("NThreshold:",  6, 0)
-        
+        self._addLabel("Threshold:", 5, 0)
+        self._addLabel("NThreshold:", 6, 0)
+
         # A combobox that sets the main action of the program.
         combo = QtWidgets.QComboBox()
         combo.setToolTip(self.actiontip)
@@ -364,7 +392,7 @@ class OptionGroup(QtWidgets.QGroupBox):
         combo.activated.connect(self._handle)
         self.grid.addWidget(combo, 0, 1)
         self.actioncombo = combo
-        
+
         # Select the eye(s) to inspect or extract.
         combo = QtWidgets.QComboBox()
         combo.setToolTip(self.eyetip)
@@ -423,16 +451,16 @@ class OptionGroup(QtWidgets.QGroupBox):
         # to the handler(value) of the next dict. the handler
         # will handle the event.
         self.handlers = {
-            self.actioncombo        : self.handleAction,
-            self.eyecombo           : self.handleEye,
-            self.smoothcheckbox     : self.handleSmooth,
-            self.windowcombo        : self.handleSmoothWindow,
-            self.ordercombo         : self.handleSmoothOrder,
-            self.thresholdcombo     : self.handleThreshold,
-            self.nthresholdentry    : self.handleNThreshold
+            self.actioncombo: self.handleAction,
+            self.eyecombo: self.handleEye,
+            self.smoothcheckbox: self.handleSmooth,
+            self.windowcombo: self.handleSmoothWindow,
+            self.ordercombo: self.handleSmoothOrder,
+            self.thresholdcombo: self.handleThreshold,
+            self.nthresholdentry: self.handleNThreshold
         }
-    
-    def _addLabel(self, string, row , column, rowspan=1, heightspan=1):
+
+    def _addLabel(self, string, row, column, rowspan=1, heightspan=1):
         """ utility to add labels to the layout """
         label = QtWidgets.QLabel(string)
         self.grid.addWidget(label, row, column, rowspan, heightspan)
@@ -455,11 +483,15 @@ class OptionGroup(QtWidgets.QGroupBox):
             self.windowcombo.setEnabled(True)
             self.ordercombo.setEnabled(True)
             try:
-                comboSelectString(self.windowcombo, str(self.MODEL[self.MODEL.SMOOTHWIN]))
+                comboSelectString(self.windowcombo, str(
+                    self.MODEL[self.MODEL.SMOOTHWIN]
+                ))
             except NoSuchString as e:
                 sys.stderr.write(e.message + "\n")
             try:
-                comboSelectString(self.ordercombo, str(self.MODEL[self.MODEL.SMOOTHORDER]))
+                comboSelectString(self.ordercombo, str(
+                    self.MODEL[self.MODEL.SMOOTHORDER]
+                ))
             except NoSuchString as e:
                 sys.stderr.write(e.message + "\n")
         else:
@@ -467,7 +499,9 @@ class OptionGroup(QtWidgets.QGroupBox):
             self.windowcombo.setEnabled(False)
             self.ordercombo.setEnabled(False)
 
-        comboSelectString(self.thresholdcombo, self.MODEL[self.MODEL.THRESHOLD])
+        comboSelectString(
+            self.thresholdcombo, self.MODEL[self.MODEL.THRESHOLD]
+        )
 
         self.nthresholdentry.setText(str(self.MODEL[self.MODEL.NTHRESHOLD]))
 
@@ -476,7 +510,7 @@ class FileEntry(QtWidgets.QListWidgetItem):
     """ FileEntry can be cast to string. It displays the
         filename, but keeps the directory in mind.
     """
-    
+
     def __init__(self, directory, fname, parent):
         super(FileEntry, self).__init__(fname, parent)
         self.directory = directory
@@ -487,20 +521,22 @@ class FileEntry(QtWidgets.QListWidgetItem):
         """ Create absolute pathname. """
         return p.join(self.directory, self.fname)
 
-class FileEntryList(QtWidgets.QListWidget) :
+
+class FileEntryList(QtWidgets.QListWidget):
     """
     Handles delete keypress to remove one entry from
     the model and view.
     """
-    def __init__(self, FileView,  parent=None):
+    def __init__(self, FileView, parent=None):
         super(FileEntryList, self).__init__(parent)
-        self.view = FileView 
+        self.view = FileView
 
     def keyPressEvent(self, e):
         if e.key() == QtCore.Qt.Key_Delete:
             self.view.removeSelected()
 
-class InputOutput(QtWidgets.QVBoxLayout) :
+
+class InputOutput(QtWidgets.QVBoxLayout):
     """
     InputOutput helps to display the files used
     as input for the fixation dectection algorithms
@@ -509,15 +545,15 @@ class InputOutput(QtWidgets.QVBoxLayout) :
     directory.
     """
 
-    FILTERS     = "EyeData (*.csv *.asc);;all (*)"
-    EYE_FILT    = "EyeData"
-    
+    FILTERS = "EyeData (*.csv *.asc);;all (*)"
+    EYE_FILT = "EyeData"
+
     def __init__(self, controller, model):
         """ initializes model, controller and finally the gui elements"""
         super(InputOutput, self).__init__()
-        self.MODEL      = model
+        self.MODEL = model
         self.controller = controller
-        self.files = [] # the input files
+        self.files = []  # the input files
         self._init()
 
     def _init(self):
@@ -525,26 +561,28 @@ class InputOutput(QtWidgets.QVBoxLayout) :
         label = QtWidgets.QLabel("Input files:")
         self.addWidget(label)
 
-        self.fileviewwidget = FileEntryList(self)#QtWidgets.QListWidget()
-        self.fileviewwidget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.fileviewwidget = FileEntryList(self)  # QtWidgets.QListWidget()
+        self.fileviewwidget.setSelectionMode(
+            QtWidgets.QAbstractItemView.ExtendedSelection
+        )
         self.fileviewwidget.itemSelectionChanged.connect(self.onSelection)
         self.addWidget(self.fileviewwidget)
-        
+
     def onSelection(self):
         """ Called when selection changes. """
         items = self.fileviewwidget.selectedItems()
         self.controller.updateSelected(items)
-        #don't update, causes infinite recursion
+        # don't update, causes infinite recursion
 
     def _openFiles(self):
         """ This opens files, and updates the data model. """
         d = self.MODEL.file_dir()
         l, _filt = QtWidgets.QFileDialog.getOpenFileNames(
-                caption         = "Select input file(s)",
-                directory       = d,
-                filter          = self.FILTERS,
-                initialFilter   = self.EYE_FILT
-                )
+            caption="Select input file(s)",
+            directory=d,
+            filter=self.FILTERS,
+            initialFilter=self.EYE_FILT
+        )
         if l:
             self.controller.updateFiles(l)
             path = str(l[0])
@@ -553,13 +591,13 @@ class InputOutput(QtWidgets.QVBoxLayout) :
 
     def removeSelected(self):
         """ delete selected item's """
-        l = self.fileviewwidget.selectedItems()
-        self.controller.removeSelected(l)
+        selected = self.fileviewwidget.selectedItems()
+        self.controller.removeSelected(selected)
         self.updateFromModel()
 
     def updateFromModel(self):
         """ Add filenames to view """
-        modelset = set (self.MODEL.files())
+        modelset = set(self.MODEL.files())
         currentset = set([])
         selected = self.MODEL.selected
         itemlist = self.fileviewwidget.findItems("*", QtCore.Qt.MatchWildcard)
@@ -575,7 +613,8 @@ class InputOutput(QtWidgets.QVBoxLayout) :
                 item.setSelected(True)
             else:
                 item.setSelected(False)
-        
+
+
 ##
 # The main window of iSpector
 #
@@ -587,19 +626,19 @@ class InputOutput(QtWidgets.QVBoxLayout) :
 class ISpectorGui(QtWidgets.QMainWindow):
 
     ## window title, can still be improved
-    _WINDOW_TITLE = iSpectorVersion.getVersion() +\
-                    " (if it starts with eye it \"must\" be good)"
-    
+    _WINDOW_TITLE = iSpectorVersion.getVersion() + \
+        " (if it starts with eye it \"must\" be good)"
+
     ##
     # Construct the main window.
     def __init__(self, model):
-        """ Inits the main window """
+        """Inits the main window"""
         super(ISpectorGui, self).__init__()
-        
+
         ## the controller from a MVC gui implementation
         self.controller = Controller(model, self)
         ## the model from a MVC gui implementation
-        self.MODEL      = model
+        self.MODEL = model
 
         # init Qt related stuff
         self._init()
@@ -617,7 +656,7 @@ class ISpectorGui(QtWidgets.QMainWindow):
         ## a grid to layout all other widgets.
         self.grid = QtWidgets.QGridLayout()
         self.grid.setColumnStretch(1, 1)
-        self.grid.setColumnStretch(0,10)
+        self.grid.setColumnStretch(0, 10)
         centralwidget.setLayout(self.grid)
 
         # Make the options
@@ -627,51 +666,54 @@ class ISpectorGui(QtWidgets.QMainWindow):
         self.grid.addWidget(self.options, 0, 1)
 
         # Create the directory widget
-        self.dirs    = DirGroup(self.controller, self.MODEL, self)
+        self.dirs = DirGroup(self.controller, self.MODEL, self)
         self.dirs.setFlat(False)
         self.grid.addWidget(self.dirs, 1, 1)
 
         ## The file selector
         self.files = InputOutput(self.controller, self.MODEL)
-        self.grid.addLayout(self.files, 0, 0, 2,1, QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
+        self.grid.addLayout(self.files, 0, 0, 2, 1,
+                            QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
 
         ## The action button to start the iSpector action.
         self.actionbutton = QtWidgets.QPushButton("")
         self.actionbutton.clicked.connect(self.doAction)
-        self.grid.addWidget(self.actionbutton, 3, 1, alignment=QtCore.Qt.AlignRight)
+        self.grid.addWidget(
+            self.actionbutton, 3, 1, alignment=QtCore.Qt.AlignRight
+        )
 
         ## The box wherein status messages are displayed.
         self.statusbox = statusbox.StatusBox()
-        templayout = QtWidgets.QVBoxLayout();
+        templayout = QtWidgets.QVBoxLayout()
         templabel = QtWidgets.QLabel("Status messages: ")
         templayout.addWidget(templabel)
         templayout.addWidget(self.statusbox)
         self.grid.addLayout(templayout, 2, 0, 1, 2)
 
         # create exit handeling and keyboard short cuts.
-        icon        = QtGui.QIcon.fromTheme("window-close")
-        exitAction  = QtWidgets.QAction(icon, '&Exit', self)
+        icon = QtGui.QIcon.fromTheme("window-close")
+        exitAction = QtWidgets.QAction(icon, '&Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setStatusTip('Exit application')
         exitAction.triggered.connect(QtWidgets.qApp.quit)
 
-        icon        = QtGui.QIcon.fromTheme("document-open")
-        openAction  = QtWidgets.QAction(icon, '&Open', self)
+        icon = QtGui.QIcon.fromTheme("document-open")
+        openAction = QtWidgets.QAction(icon, '&Open', self)
         openAction.setShortcut('Ctrl+O')
         openAction.setStatusTip('Open file(s)')
         openAction.triggered.connect(self.files._openFiles)
-        
+
         # add menubar
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(exitAction)
         fileMenu.addAction(openAction)
-        
+
         # Update the entire window before showing it.
         self.updateFromModel()
 
         self.show()
-    
+
     ##
     # Catch events related check to see whether it is a status event.
     #
@@ -699,7 +741,7 @@ class ISpectorGui(QtWidgets.QMainWindow):
     # \param status one of StatusMessage.ok, error or warning.
     # \param message a string with information to display.
     def reportStatus(self, status, message):
-        status =  sm.StatusMessage(status, message)
+        status = sm.StatusMessage(status, message)
         event = ievent.StatusEvent(status)
         QtWidgets.QApplication.postEvent(self, event)
 
@@ -722,7 +764,7 @@ class ISpectorGui(QtWidgets.QMainWindow):
             filelist = self.MODEL.selected
         else:
             filelist = self.MODEL.files()
-        
+
         model = datamodel.ExamineDataModel(filelist, self)
         controller = datamodel.ExamineDataController(model)
         examinewidget = inspecteyedataview.InspectEyeDataView(model,
@@ -732,7 +774,7 @@ class ISpectorGui(QtWidgets.QMainWindow):
         if examinewidget.hasValidData():
             examinewidget.show()
         else:
-            self.reportStatus(statusmessage.StatusMessage.error,
+            self.reportStatus(sm.StatusMessage.error,
                               "Unable to load valid data for inspection.")
 
     def editFixations(self, filelist):
@@ -742,54 +784,55 @@ class ISpectorGui(QtWidgets.QMainWindow):
         else:
             filelist = self.MODEL.files()
 
-        model           = fixationeditor.FixationEditModel(filelist,
-                                                           self,
-                                                           fixationeditor.SHOW_ALL
-                                                           )
-        controller      = fixationeditor.FixationEditController(model)
-        fix_edit_widget = fixationeditor.FixationEditView(model, controller, self)
+        model = fixationeditor.FixationEditModel(filelist,
+                                                 self,
+                                                 fixationeditor.SHOW_ALL
+                                                 )
+        controller = fixationeditor.FixationEditController(model)
+        fix_edit_widget = fixationeditor.FixationEditView(
+            model, controller, self
+        )
         if fix_edit_widget.hasValidData():
             fix_edit_widget.show()
         else:
-            self.reportStatus(statusmessage.StatusMessage.error,
+            self.reportStatus(sm.StatusMessage.error,
                               "Unable to load valid data for inspection.")
-        
 
     def _createOutputFilename(self, experiment, fname, outdir):
         """ Create a suitable output absolute pathname
             based on the input of the experiment
             or the output.
         """
-        # create output filename
-        expname  = experiment.getFixationName() # take a Fixation compatible output name
+        # create output file name
+        expname = experiment.getFixationName()
         tempdir, shortfname = p.split(fname)
         odir = ""
         if outdir:
-            #use specified output dir
+            # use specified output dir
             odir = outdir
         else:
-            #use origin filedir (put in- and output alongside eachother)
+            # use origin filedir (put in- and output alongside each other)
             odir = tempdir
-        #absolute path to new filename
+        # absolute path to new filename
         absoutput = p.join(odir, expname)
-        
-        # Warn user if file allready exists.
+
+        # Warn user if file already exists.
         if p.exists(absoutput):
-            msg = ("The file \"" + absoutput  + "\"already exits.\n"
+            msg = ("The file \"" + absoutput + "\"already exits.\n"
                    "Do you want to overwrite it?")
             dlg = QtWidgets.QMessageBox(
-                    QtWidgets.QMessageBox.Warning,
-                    "File exits",
-                    msg,
-                    QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
-                    )
+                QtWidgets.QMessageBox.Warning,
+                "File exits",
+                msg,
+                QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
+            )
             if dlg.exec_() == QtWidgets.QMessageBox.Cancel:
                 return None
         return absoutput
 
     def extractForFixation(self, filelist, outdir=""):
         for fname in filelist:
-            #inform user
+            # inform user
             msg = "processing file: \"" + fname + "\""
             self.reportStatus(sm.StatusMessage.ok, msg)
             self.statusBar().showMessage(msg)
@@ -798,12 +841,13 @@ class ISpectorGui(QtWidgets.QMainWindow):
 
             entries = pr.getEntries()
             if not entries:
-                # add error info to gui 
-                dlg = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Critical,
-                                        "Parse Error",
-                                        "Unable to parse \"" + fname + "\"",
-                                        QtWidgets.QMessageBox.Ok
-                                        )
+                # add error info to gui
+                dlg = QtWidgets.QMessageBox(
+                    QtWidgets.QMessageBox.Critical,
+                    "Parse Error",
+                    "Unable to parse \"" + fname + "\"",
+                    QtWidgets.QMessageBox.Ok
+                )
                 dlg.exec_()
                 continue
 
@@ -812,7 +856,7 @@ class ISpectorGui(QtWidgets.QMainWindow):
             # Optionally filter right or left gaze from the experiment
             if      (self.MODEL[self.MODEL.EXTRACT_RIGHT] and self.MODEL[self.MODEL.EXTRACT_LEFT]) or\
                     (not self.MODEL[self.MODEL.EXTRACT_LEFT] and not self.MODEL[self.MODEL.EXTRACT_RIGHT]):
-                pass # If both are specified or if none are specified extract both eyes
+                pass  # If both are specified or if none are specified extract both eyes
             elif self.MODEL[self.MODEL.EXTRACT_LEFT]:
                 entries = list(LogEntry.removeRightGaze(entries))
             elif self.MODEL[self.MODEL.EXTRACT_RIGHT]:
@@ -820,37 +864,40 @@ class ISpectorGui(QtWidgets.QMainWindow):
             else:
                 raise RuntimeError("The control flow shouldn't get here.")
 
-            experiment  = EyeExperiment(entries)
-            assert(experiment)
+            experiment = EyeExperiment(entries)
+            assert experiment
 
-            # Obtain filename
+            # Obtain file name
             absoutput = self._createOutputFilename(experiment, fname, outdir)
             if not absoutput:
                 continue
 
-            # Determine our own fixations and saccades.
+            # Determine our own fixations, saccades and blinks.
             for t in experiment.trials:
-                if t.containsGazeData() == True:
+                if t.containsGazeData():
                     thres = self.MODEL[self.MODEL.THRESHOLD]
-                    nthres= self.MODEL[self.MODEL.NTHRESHOLD]
-                    smooth= self.MODEL[self.MODEL.SMOOTH]
+                    nthres = self.MODEL[self.MODEL.NTHRESHOLD]
+                    smooth = self.MODEL[self.MODEL.SMOOTH]
                     winsz = self.MODEL[self.MODEL.SMOOTHWIN]
                     order = self.MODEL[self.MODEL.SMOOTHORDER]
                     eyedata = EyeData(
-                            thres,
-                            nthres,
-                            smooth,
-                            winsz,
-                            order
-                            )
+                        thres,
+                        nthres,
+                        smooth,
+                        winsz,
+                        order
+                    )
                     eyedata.processTrial(t, True)
                     lfixes, rfixes = eyedata.getFixations()
-                    rsacs , lsacs  = eyedata.getSaccades()
+                    lsacs, rsacs = eyedata.getSaccades()
+                    lblinks, rblinks = eyedata.getBlinks()
                     entries.extend(lfixes)
                     entries.extend(rfixes)
                     entries.extend(lsacs)
                     entries.extend(rsacs)
-            
+                    entries.extend(lblinks)
+                    entries.extend(rblinks)
+
             # finally save the output.
             saveForFixation(entries, absoutput)
         self.controller.updateStatus("Finished")
@@ -862,11 +909,12 @@ class ISpectorGui(QtWidgets.QMainWindow):
         """
         files = self.MODEL.selected
         if not files:
-            # if no files are selected ask whether all files in the 
+            # if no files are selected ask whether all files in the
             # listview should be processed.
-            self.reportStatus(sm.StatusMessage.warning,
-                    "No files selected running action on all files")
-            
+            self.reportStatus(
+                sm.StatusMessage.warning,
+                "No files selected running action on all files"
+            )
             files = self.MODEL.files()
         if not files:
             return
@@ -888,45 +936,44 @@ class ISpectorGui(QtWidgets.QMainWindow):
         super(ISpectorGui, self).closeEvent(event)
 
 
-
 class MainGuiModel(dict):
     """
     The model of the parameters of iSpector
     """
 
-    SMOOTH          = "smooth"          ##<bool
-    SMOOTHWIN       = "smoothwin"       ##<int
-    SMOOTHORDER     = "smoothorder"     ##<int
-    THRESHOLD       = "threshold"       ##<string
-    NTHRESHOLD      = "nthreshold"      ##<float
-    DRAWSACCADES    = "drawsaccades"    ##<bool
-    COMPARE         = "compare"         ##<bool
-    ACTION          = "action"          ##<string
-    EXTRACT_LEFT    = "extract-left"    ##<bool
-    EXTRACT_RIGHT   = "extract-right"   ##<bool
+    SMOOTH = "smooth"  ##<bool
+    SMOOTHWIN = "smoothwin"  ##<int
+    SMOOTHORDER = "smoothorder"  ##<int
+    THRESHOLD = "threshold"       ##<string
+    NTHRESHOLD = "nthreshold"  ##<float
+    DRAWSACCADES = "drawsaccades"  ##<bool
+    COMPARE = "compare"  ##<bool
+    ACTION = "action"  ##<string
+    EXTRACT_LEFT = "extract-left"  ##<bool
+    EXTRACT_RIGHT = "extract-right"  ##<bool
     #DIRS            = "dirs"            ##<dict
     #FILES           = "files"           ##<list[string]
     #SELECTED        = "selected"        ##<list[string]
-    STATUS          = "status"          ##<string
+    STATUS = "status"  ##<string
 
     # strings releated to a certain action
 
     ## string used for inspecting
-    INSPECT         = "inspect"
+    INSPECT = "inspect"
     ## string used for extracting
-    EXTRACT         = "extract"
+    EXTRACT = "extract"
     ## string used for edit fixation action 
-    EDIT_FIXATIONS  = "edit fixations"
+    EDIT_FIXATIONS = "edit fixations"
     ## a list of strings with valid actions that iSpector can do.
-    VALID_ACTIONS   = [ INSPECT,
-                        EXTRACT,
-                        EDIT_FIXATIONS
-                        ]
+    VALID_ACTIONS = [INSPECT,
+                     EXTRACT,
+                     EDIT_FIXATIONS
+                     ]
 
-    def __init__ (self, cmdargs):
+    def __init__(self, cmdargs):
         """
         First we set the values from the configuration file,
-        then we set/overwrite from         
+        then we set/overwrite from
         """
 
         ##
@@ -949,20 +996,21 @@ class MainGuiModel(dict):
         # The files that are selected.
         self.selected = []
 
-        self[self.SMOOTH]        = cmdargs.smooth
-        self[self.SMOOTHWIN]     = cmdargs.swin
-        self[self.SMOOTHORDER]   = cmdargs.sorder
-        self[self.THRESHOLD]     = cmdargs.threshold
-        self[self.NTHRESHOLD]    = cmdargs.nthres
-        self[self.DRAWSACCADES]  = cmdargs.draw_saccades
-        self[self.COMPARE]       = cmdargs.compare
-        self[self.ACTION]        = cmdargs.action
-        self[self.EXTRACT_LEFT]  = cmdargs.extract_left
+        self[self.SMOOTH] = cmdargs.smooth
+        self[self.SMOOTHWIN] = cmdargs.swin
+        self[self.SMOOTHORDER] = cmdargs.sorder
+        self[self.THRESHOLD] = cmdargs.threshold
+        self[self.NTHRESHOLD] = cmdargs.nthres
+        self[self.DRAWSACCADES] = cmdargs.draw_saccades
+        self[self.COMPARE] = cmdargs.compare
+        self[self.ACTION] = cmdargs.action
+        self[self.EXTRACT_LEFT] = cmdargs.extract_left
         self[self.EXTRACT_RIGHT] = cmdargs.extract_right
-        self[self.STATUS]        = "ready"
+        self[self.STATUS] = "ready"
 
     def readConfig(self):
-        """Determine whether iSpector was able to read/parse the config file."""
+        """Determine whether iSpector was able to read/parse the config file.
+        """
         return self.read_config
 
     def config_dirs(self):
@@ -1002,21 +1050,23 @@ class MainGuiModel(dict):
         return self.configfile[utils.configfile.FILE_HIST]
 
     def _check_config(self):
-        """Check the config file, to see whether the expected member are present.
+        """Check the config file, to see whether the expected member are
+        present.
 
         This function can fail if a necessary element of the expected data
-        members isn't present. If it isn't, then this function should initialize
-        it with a default value.
-        @return This function returns true when there were no expected data members
-        missing.
+        members isn't present. If it isn't, then this function should
+        initialize it with a default value.
+        @return This function returns true when there were no expected data
+                members missing.
         """
         missing = False
         if utils.configfile.DIR not in self.configfile:
-            self.configfile[utils.configfile.DIR] = utils.configfile.ConfigDir()
+            self.configfile[utils.configfile.DIR] = \
+                utils.configfile.ConfigDir()
             missing = True
 
         if utils.configfile.FILE_HIST not in self.configfile:
             self.configfile[utils.configfile.FILE_HIST] = list()
-            missing= True
+            missing = True
 
         return not missing

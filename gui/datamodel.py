@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 ##
-# \file datamodel.py This file contains the data models and controllers of iSpector.
-# 
-# This is the file that contains the Controllers and Models from a 
+# \file datamodel.py This file contains the data models and controllers of
+# iSpector.
+#
+# This is the file that contains the Controllers and Models from a
 # Model View Controller design.
 #
 # \package gui
@@ -12,7 +13,7 @@ import copy
 import utils.stack
 from log.eyelog import LogEntry
 from log.parseeyefile import parseEyeFile
-from log.eyeexperiment import EyeExperiment 
+from log.eyeexperiment import EyeExperiment
 from log.eyedata import EyeData
 from log import eyelog
 from os import path
@@ -30,7 +31,7 @@ from os import path
 # model, but should be considered constant.
 #
 class DataModel(object):
-    
+
     ##
     # The DataModel takes a number of files. And a reference to the mainwindow.
     #
@@ -38,21 +39,21 @@ class DataModel(object):
     # \param [in] mainwindow the mainwindow of iSpector
     #
     def __init__(self, files, mainwin):
-        assert(files and mainwin)
+        assert files and mainwin
         ## all files taken in to account
-        self.files      = files
+        self.files = files
         ## a reference to the main window
-        self._MAINWIN   = mainwin
+        self._MAINWIN = mainwin
         ## The entire data set of one experiment
         self.experiment = None
         ## the data of one trial out of a experiment
-        self.trials     = None
+        self.trials = None
         ## an index to the right file to examine
-        self.fileindex  = -1
+        self.fileindex = -1
         ## an index to the right trial to examine
         self.trialindex = -1
         ## the view of the model
-        self._VIEW       = None
+        self._VIEW = None
 
         # Sets the file and loads the file
         self.setFileIndex(0)
@@ -86,12 +87,13 @@ class DataModel(object):
                 self._MAINWIN.reportStatus(i[2], i[0] + ':' + str(i[1]))
             return False
 
-        MODEL = self._MAINWIN.getModel()[0] # ignore the controller in the tuple
+        MODEL = self._MAINWIN.getModel()[0]  # ignore the controller in the tup
 
         # Optionally filter right or left gaze from the experiment
-        if  (MODEL[MODEL.EXTRACT_RIGHT] and MODEL[MODEL.EXTRACT_LEFT]) or\
-            (not MODEL[MODEL.EXTRACT_LEFT] and not MODEL[MODEL.EXTRACT_RIGHT]):
-            pass # If both are specified or if none are specified extract both eyes
+        if (MODEL[MODEL.EXTRACT_RIGHT] and MODEL[MODEL.EXTRACT_LEFT]) or \
+           (not MODEL[MODEL.EXTRACT_LEFT] and not MODEL[MODEL.EXTRACT_RIGHT]):
+            # If both eyes are specified or if none are specified extract both
+            pass
         elif MODEL[MODEL.EXTRACT_LEFT]:
             entries = LogEntry.removeRightGaze(entries)
         elif MODEL[MODEL.EXTRACT_RIGHT]:
@@ -101,31 +103,32 @@ class DataModel(object):
 
         if not entries:
             return False
-        
+
         ##
         # an entire EyeExperiment
         self.experiment = EyeExperiment(entries)
         ##
         # an reference to the list of trials contained in self.experiment
-        self.trials     = self.experiment.trials
+        self.trials = self.experiment.trials
 
         # The file is loaded so call onFileLoaded()
         self.onFileLoaded()
 
         return True
-    
+
     ##
     # Set a new fileindex
     #
     # Set a new fileindex and load a the new eyefile.
     # This is only done when n is unequal to the current fileindex.
     #
-    # \param n a valid index in the interval wich meets 0 >= n < len(self.files)
+    # \param n a valid index in the interval which
+    # meets 0 >= n < len(self.files)
     def setFileIndex(self, n):
-        assert(n >= 0 and n < len(self.files))
+        assert n >= 0 and n < len(self.files)
         if n == self.fileindex:
             return
-        
+
         self.fileindex = n
         self.loadEyeFile()
 
@@ -156,15 +159,15 @@ class DataModel(object):
     #
     def setTrialIndex(self, n):
         # check whether n is valid and different
-        assert(self.trials)
-        assert(n >= 0 and n < len(self.trials))
+        assert self.trials
+        assert n >= 0 and n < len(self.trials)
         if n == self.trialindex:
             return
 
         # set the new trial.
         self.trialindex = n
         self.onNewTrial()
-    
+
     ##
     # Returns the current trial index
     def getTrialIndex(self):
@@ -174,7 +177,6 @@ class DataModel(object):
     # Return the maximum trial index
     def getTrialMaxIndex(self):
         return len(self.trials) - 1
-
 
     ##
     # onFileLoaded is called when a new file has been loaded.
@@ -223,6 +225,7 @@ class DataModel(object):
     def showLeft(self):
         MM = self._MAINWIN.getModel()[0]
         return MM[MM.EXTRACT_LEFT] or (not MM[MM.EXTRACT_LEFT] and not MM[MM.EXTRACT_RIGHT])
+
     ##
     # indicates whether the user wants to show the right eye
     def showRight(self):
@@ -239,21 +242,19 @@ class DataModel(object):
         return MM[MM.EXTRACT_AVG]
 
 
-    
-
 ##
 # The model for the data to be presented.
-# 
+#
 # The model holds
 # a number of filenames. It holds an index of the file and
 # trial to be processed.
 # Finally it contains the logdata of all trials.
 class ExamineDataModel(DataModel):
-    
+
     ## The eyedata takes a number of files. And a reference to the mainwindow.
     #
-    #@param [in] files a list of files
-    #@param [in] mainwindow the mainwindow of iSpector
+    # @param [in] files a list of files
+    # @param [in] mainwindow the mainwindow of iSpector
     #
     def __init__(self, files, mainwin):
         ##
@@ -263,7 +264,7 @@ class ExamineDataModel(DataModel):
 
     ##
     # If a new trial is selected, a new trial should be loaded.
-    # 
+    #
     def onNewTrial(self):
         self._loadEyeData()
 
@@ -277,12 +278,12 @@ class ExamineDataModel(DataModel):
     def _loadEyeData(self):
         trial = self.trials[self.trialindex]
         # We only want to read the model thus no need to get the controller
-        MM      = self._MAINWIN.getModel()[0]
-        thres   = MM[MM.THRESHOLD]
-        nthres  = MM[MM.NTHRESHOLD]
-        smooth  = MM[MM.SMOOTH]
-        win     = MM[MM.SMOOTHWIN]
-        order   = MM[MM.SMOOTHORDER]
+        MM = self._MAINWIN.getModel()[0]
+        thres = MM[MM.THRESHOLD]
+        nthres = MM[MM.NTHRESHOLD]
+        smooth = MM[MM.SMOOTH]
+        win = MM[MM.SMOOTHWIN]
+        order = MM[MM.SMOOTHORDER]
 
         self.eyedata = EyeData(thres, nthres, smooth, win, order)
         self.eyedata.processTrial(trial)
@@ -290,18 +291,18 @@ class ExamineDataModel(DataModel):
 
 ##
 # This data model contains everything to examine a/multiple eye movement files.
-# 
+#
 # This data model is more expensive than the default ExamineDataModel, however
 # it is more capable to edit the data in the experiments or files.
 # This way it is possible to maintain some edits and
 # save those edits when necessary.
 #
 class EditDataModel (DataModel):
-    
+
     ## operation succeeded
-    OK          = 0
+    OK = 0
     ## file name already exists
-    FN_EXISTS   = 1
+    FN_EXISTS = 1
 
     ## The eyedata takes a number of files. And a reference to the mainwindow.
     #
@@ -313,7 +314,7 @@ class EditDataModel (DataModel):
         ## The data of the current experiment
         self._current_experiment = None
         ## The data of the current eyetrial
-        self._current_eyetrial   = None
+        self._current_eyetrial = None
         ## holds all modifications to the EditDataModel
         self._stack = utils.stack.Stack()
         ## holds the number of edit undo's
@@ -343,7 +344,7 @@ class EditDataModel (DataModel):
     # pushes new edit on the stack
     #
     # If a user has undone some edits the user now permanently loses those
-    # changes. 
+    # changes.
     def pushEdit(self, edit):
         if self.nth_undo != 0:
             self._stack.shrink(self.nth_undo)
@@ -367,7 +368,7 @@ class EditDataModel (DataModel):
 
     ##
     # Pushes the initial edit to the stack.
-    # 
+    #
     # The stack should never be empty in practise the initial state
     # holds one edit that is identical to the start position
     # Once the current trial is loaded there must be one edit
@@ -384,7 +385,7 @@ class EditDataModel (DataModel):
     # If edits are made we save the experiment. We also
     # swap the name in the list of files with the new file name. Then
     # if someone sets the file index back to the currently
-    # edited file, they will see the updated file and not the 
+    # edited file, they will see the updated file and not the
     # original file.
     #
     # \param fn the file name to save the experiment to
@@ -402,13 +403,14 @@ class EditDataModel (DataModel):
         entries = self._current_experiment.getEntries()
         eyelog.saveForFixation(entries, fn)
 
-        # store the name of the saved experiment instead of the opened experiment.
-        ## TODO examine whether it is feasible to update the main window as well.
+        # store the name of the saved experiment instead of the opened
+        # experiment.
+        ## TODO examine whether it is feasible to update the main window as
+        # well.
         self.files[self.fileindex] = str(fn)
 
         return self.OK
-        
-    
+
     ##
     # add Edits from the current experiment to the trial inside
     # current_experiment.
@@ -420,14 +422,15 @@ class EditDataModel (DataModel):
     # \abstract
     def addTrialToCurrentExperiment(self):
         raise NotImplementedError(
-            "addTrialToCurrentExperiment must be called from derived class only"
-            )
+            "addTrialToCurrentExperiment must be called from derived class "
+            "only"
+        )
 
     ##
     # Makes itself ready for a new trial
     #
     def onFileLoaded(self):
-        #super(EditDataModel, self).onFileLoaded() raise NotImplementedError
+        # super(EditDataModel, self).onFileLoaded() raise NotImplementedError
         self._current_experiment = self.experiment.copy()
 
     ##
@@ -440,24 +443,27 @@ class EditDataModel (DataModel):
         # Clear the stack copy the current trial and push the initial edit
         self._clearStack()
         self._current_eyetrial = copy.deepcopy(
-                self._current_experiment.trials[self.trialindex]
-                )
+            self._current_experiment.trials[self.trialindex]
+        )
         self._pushInitialEdit()
 
     ##
-    # Determines whether the user has made modifications to the data in the experiment
+    # Determines whether the user has made modifications to the data in the
+    # experiment
     #
-    # Determines when an experiment is modified by the editor. If it is modified
-    # this function can be used to request the user to save the modifications.
+    # Determines when an experiment is modified by the editor. If it is
+    # modified this function can be used to request the user to save the
+    # modifications.
     #
-    # \returns true if there were modifications to the experiment, False otherwise.
+    # \returns true if there were modifications to the experiment, False
+    # otherwise.
     def isExperimentModified(self):
         if not self.experiment:
             return False
         if self._current_experiment != self.experiment or self.isEditted():
             return True
         return False
-    
+
     ##
     # Determines whether the data of the trial is modified.
     # This can be used update the trial.
@@ -503,21 +509,20 @@ class EditDataModel (DataModel):
     #
     def setTrialIndex(self, n):
         # check whether n is valid and different
-        #print self, "setTrialIndex", n, self.trialindex, self.isTrialModified()
         if n == self.trialindex:
             return
 
         if self.isTrialModified():
             self.addTrialToCurrentExperiment()
         super(EditDataModel, self).setTrialIndex(n)
-    
+
     ##
     # An edit model doesn't need an EyeData instance, so it isn't called
     # \TODO examine whether this function should only be called in a
     # ExamineDataModel.
     #
     def _loadEyeData(self):
-        pass #raise NotImplementedError()
+        pass  # raise NotImplementedError()
 
     ##
     # Determines whether edits have been made.
@@ -550,7 +555,7 @@ class EditDataModel (DataModel):
 # This controller is not suited to edit data inside an experiment.
 #
 class ExamineDataController(object):
-    
+
     ##
     # @param model an instance of ExamineDataModel
     #
@@ -561,7 +566,7 @@ class ExamineDataController(object):
         if not self.model.loadEyeFile():
             return
         self.setTrialIndex(0)
-    
+
     ##
     # reloads the model with the current setting from the main window.
     def reload(self):
@@ -577,7 +582,7 @@ class ExamineDataController(object):
         if n < 0:
             n = 0
         if n >= len(self.model.files):
-            n = len(self.model.files) -1
+            n = len(self.model.files) - 1
         self.model.setFileIndex(n)
 
     ##
@@ -603,7 +608,7 @@ class ExamineDataController(object):
             self.setTrialIndex(0)
             return
         self.setTrialIndex(self.model.trialindex + 1)
-    
+
     ##
     # Present previous trial even if in the previous file.
     def prevTrial(self):
@@ -627,7 +632,7 @@ class ExamineDataController(object):
 # discard the edits.
 #
 class EditDataController (ExamineDataController):
-    
+
     ##
     # @param model an instance of ExamineDataModel
     # \todo check whether the parent __init__ can't solve all of this.
@@ -639,12 +644,12 @@ class EditDataController (ExamineDataController):
     #
     # \param fn         string with the filename for the new experiment.
     # \param overwrite  boolean specify whether the file should be overwritten
-    # 
+    #
     # \returns gui.EditDataModel.OK if written or gui.EditDataModel.FN_EXISTS
     #          if overwrite is false and the file exists.
     def saveExperiment(self, fn, overwrite=False):
         return self.model.saveExperiment(fn, overwrite)
-    
+
     ##
     # Reloads the model with the current setting from the main window.
     #
@@ -681,13 +686,13 @@ class EditDataController (ExamineDataController):
         #       instead via the parent.
         self.model.setTrialIndex(n)
 
-        #super(EditDataController, self).setTrialIndex(n)
+        # super(EditDataController, self).setTrialIndex(n)
 
     ##
     # undos last edit if possible
     def undoEdit(self):
         self.model.undoEdit()
-    
+
     ##
     # redo last edit if possible
     def redoEdit(self):

@@ -61,3 +61,6 @@ doc/
 
 # vim swap files
 *.sw[a-z]
+
+# virtual environment
+venv/
