@@ -11,13 +11,13 @@ SetCompressor /SOLID /FINAL zlib
 ;----- Definitions of some constants
 
 !define MY_PROGRAM_NAME     "iSpector"
-!define MY_ORGANISATION     "Uil_OTS"
+!define MY_ORGANISATION     "ils-labs"
 !define MY_ICON_DIR         "logo"
 !define MY_ICON             "${MY_ICON_DIR}\ispectorlogo.ico"
 
 ; Don't update these three variables, this should be done with bump-version.py.
 !define MY_VERSION_MAJOR "0"
-!define MY_VERSION_MINOR "6"
+!define MY_VERSION_MINOR "8"
 !define MY_VERSION_MICRO "0"
 
 ; Full application name include major and minor versions, in such way
@@ -107,7 +107,7 @@ Icon ${MY_ICON}
 ; The installer.
 OutFile "${FULL_APP_NAME}-installer.exe"
 
-; install standard under program files - uil_ots
+; install standard under program files - ils-labs 
 InstallDir "$PROGRAMFILES64\${MY_ORGANISATION}"
 
 
