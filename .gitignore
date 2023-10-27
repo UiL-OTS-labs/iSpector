@@ -64,3 +64,6 @@ doc/
 
 # virtual environment
 venv/
+
+# cache for mypy
+.mypy_cache
