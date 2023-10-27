@@ -7,7 +7,7 @@ minor version number should be odd for nightly build and even for stable builds.
 name = "iSpector"
 
 iSpector_major = 0
-iSpector_minor = 8
+iSpector_minor = 9
 iSpector_micro = 0
 
 
@@ -39,6 +39,6 @@ if __name__ == "__main__":
     import sys
 
     sys.exit(
-        "Don't run this file, run bump-version.py instead. Without arguments" +
-        " it will print the current version."
+        "Don't run this file, run bump-version.py instead. Without arguments"
+        + " it will print the current version."
     )
