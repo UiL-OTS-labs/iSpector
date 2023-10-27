@@ -16,7 +16,7 @@ from numpy import nanmedian
 import typing
 
 try:
-    from scipy.signal import savitzky_golay
+    from scipy.signal import savgol_filter as savitzky_golay
 except ImportError:
     from utils.tempsignal import savitzky_golay
 from .eyelog import LogEntry, SaccadeEntry, FixationEntry, GazeEntry, BlinkEntry
