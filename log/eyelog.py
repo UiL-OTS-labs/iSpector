@@ -21,8 +21,12 @@ from __future__ import annotations
 import itertools
 import functools
 import abc
+import sys
 import typing
-from collections.abc import Iterable
+if sys.version_info >= (3, 9):
+    from collections.abc import Iterable
+else:
+    from typing import Iterable
 
 
 class LogEntry (abc.ABC):
