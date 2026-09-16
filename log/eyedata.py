@@ -216,10 +216,10 @@ class EyeData:
 
         if self.hasLeftGaze():
             ## approximation of the duration of a sample of the left eye
-            self.lsampledur = sp.median(sp.diff(self.lgazetimes))
+            self.lsampledur = np.median(np.diff(self.lgazetimes))
         if self.hasRightGaze():
             ## approximation of the duration of a sample of the right eye
-            self.rsampledur = sp.median(sp.diff(self.rgazetimes))
+            self.rsampledur = np.median(np.diff(self.rgazetimes))
 
         # values with 0.0 as value should not be considered as data
         self.xgazeleft[self.xgazeleft == 0] = float("nan")
@@ -629,8 +629,8 @@ class EyeData:
             boolvec = np.logical_and(gazetimes >= start, gazetimes <= end)
             if duration < 0:
                 raise ValueError("Endtime before start time")
-            meanx = sp.mean(xgaze[boolvec])
-            meany = sp.mean(ygaze[boolvec])
+            meanx = xgaze[boolvec].mean()
+            meany = ygaze[boolvec].mean()
             fixations.append(FixationEntry(entrytype, start, duration, meanx, meany))
         return fixations
 
